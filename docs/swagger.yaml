@@ -1,4 +1,3 @@
-basePath: /api/v1
 info:
   contact: {}
 paths:
@@ -17,4 +16,122 @@ paths:
       summary: ping example
       tags:
       - example
+  /terraform/{projectId}/plan:
+    get:
+      consumes:
+      - application/json
+      description: do ping
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Fetch all the terraform plans for a given project
+      tags:
+      - terraform
+  /terraform/{projectId}/plan/{planId}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: plan id
+        in: path
+        name: planId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Method returns the terraform plan output for a given plan id
+      tags:
+      - terraform
+  /terraform/{projectId}/plan/{planId}/apply:
+    post:
+      consumes:
+      - application/json
+      description: do ping
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: plan id
+        in: path
+        name: planId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Method Apply changes for a given plan id return deployment id
+      tags:
+      - terraform
+  /terraform/{projectId}/plan/{planId}/apply/{deploymentId}:
+    get:
+      consumes:
+      - application/json
+      description: do ping
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: plan id
+        in: path
+        name: planId
+        required: true
+        type: string
+      - description: deployment id
+        in: path
+        name: deploymentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Method to fetch deployment status for a given deployment id
+      tags:
+      - terraform
+  /terraform/plan:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Method to run Terraform Plan for a given project and return the plan
+        id
+      tags:
+      - terraform
 swagger: "2.0"
