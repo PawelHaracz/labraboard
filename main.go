@@ -16,6 +16,8 @@ func main() {
 	//https://www.squash.io/optimizing-gin-in-golang-project-structuring-error-handling-and-testing/
 	//https://github.com/swaggo/gin-swagger
 	//https://github.com/eddycjy/go-gin-example
+	//https://github.com/derekahn/ultimate-go/blob/master/language/interfaces/main.go
+	//https://github.com/percybolmer/ddd-go
 }
 
 //func

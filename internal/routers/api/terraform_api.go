@@ -9,6 +9,8 @@ import (
 // @BasePath /api/v1
 // @Summary Method to run Terraform Plan for a given project and return the plan id
 // @Schemes http
+// @Param projectId path string true "project id"
+// @Param planId path string true "plan id"
 // @Description
 // @Tags terraform
 // @Accept json
@@ -16,6 +18,9 @@ import (
 // @Success 200 {string} CreateTerraformPlan
 // @Router /terraform/plan [POST]
 func CreateTerraformPlan(g *gin.Context) {
+	planId := g.Param("planId")
+	projectId := g.Param("projectId")
+	g.String(http.StatusOK, "hello world %s %s", planId, projectId)
 
 }
 
@@ -35,6 +40,7 @@ func GetTerraformPlan(g *gin.Context) {
 	planId := g.Param("planId")
 	projectId := g.Param("projectId")
 	g.String(http.StatusOK, "hello world %s %s", planId, projectId)
+	//todo implement queue https://prasanthmj.github.io/go/go-task-queue-with-badgerdb-backend/
 }
 
 // ApplyTerraformPlan
