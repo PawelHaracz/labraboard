@@ -38,28 +38,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/terraform/plan": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "terraform"
-                ],
-                "summary": "Method to run Terraform Plan for a given project and return the plan id",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/terraform/{projectId}/plan": {
             "get": {
                 "description": "do ping",
@@ -73,6 +51,35 @@ const docTemplate = `{
                     "terraform"
                 ],
                 "summary": "Fetch all the terraform plans for a given project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "project id",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "terraform"
+                ],
+                "summary": "Method to run Terraform Plan for a given project and return the plan id",
                 "parameters": [
                     {
                         "type": "string",

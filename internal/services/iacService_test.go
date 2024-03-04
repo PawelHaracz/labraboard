@@ -4,16 +4,15 @@ import (
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/domains/iac/memory"
-	"labraboard/internal/models"
 	"testing"
 )
 
 func TestNewIacService(t *testing.T) {
-	tfPlanner, _ := models.NewTerraformPlanner()
+	//tfPlanner, _ := models.NewTerraformPlanner()
 	r, _ := memory.NewRepository()
 
 	is, err := NewIacService(
-		WithPlanner(tfPlanner),
+		//WithPlanner(tfPlanner),
 		WithRepository(r))
 
 	if err != nil {
@@ -24,7 +23,7 @@ func TestNewIacService(t *testing.T) {
 		t.Errorf("error: %v", "IacService is nil")
 	}
 
-	if is.planner == nil {
+	if is.publisher == nil {
 		t.Errorf("error: %v", "IacService.planner is nil")
 	}
 
@@ -41,11 +40,11 @@ func TestNewIacService(t *testing.T) {
 }
 
 func TestIacService_RunTerraformPlan(t *testing.T) {
-	tfPlanner, _ := models.NewTerraformPlanner()
+	//tfPlanner, _ := models.NewTerraformPlanner()
 	r, _ := memory.NewRepository()
 
 	is, _ := NewIacService(
-		WithPlanner(tfPlanner),
+		//WithPlanner(tfPlanner),
 		WithRepository(r))
 
 	projectId := uuid.New()

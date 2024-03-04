@@ -1,0 +1,49 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15-alpine3.19
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
+  cache:
+    image: redis:7.2.4-alpine3.19
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes:
+      - cache:/data
+  api:
+    container_name: labraboard
+    build:
+      context: ./
+      target: production
+    image: labraboard
+    depends_on:
+      - db
+      - cache
+    ports:
+      - 8080:8080
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+      REDIS_HOST: cache
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    links:
+      - db
+      - cache
+volumes:
+  db:
+    driver: local
+  cache:
+    driver: local

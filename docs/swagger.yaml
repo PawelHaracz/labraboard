@@ -37,6 +37,26 @@ paths:
       summary: Fetch all the terraform plans for a given project
       tags:
       - terraform
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Method to run Terraform Plan for a given project and return the plan
+        id
+      tags:
+      - terraform
   /terraform/{projectId}/plan/{planId}:
     get:
       consumes:
@@ -117,21 +137,6 @@ paths:
           schema:
             type: string
       summary: Method to fetch deployment status for a given deployment id
-      tags:
-      - terraform
-  /terraform/plan:
-    post:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-      summary: Method to run Terraform Plan for a given project and return the plan
-        id
       tags:
       - terraform
 swagger: "2.0"

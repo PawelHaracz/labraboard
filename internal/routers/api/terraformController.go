@@ -2,25 +2,40 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"labraboard/internal/services"
 	"net/http"
 )
+
+type TerraformPlanController struct {
+	services.IacService
+}
+
+func NewTerraformPlanController(iac *services.IacService) (*TerraformPlanController, error) {
+	return &TerraformPlanController{
+		IacService: *iac,
+	}, nil
+}
 
 // CreateTerraformPlan
 // @BasePath /api/v1
 // @Summary Method to run Terraform Plan for a given project and return the plan id
 // @Schemes http
 // @Param projectId path string true "project id"
-// @Param planId path string true "plan id"
 // @Description
 // @Tags terraform
 // @Accept json
 // @Produce json
 // @Success 200 {string} CreateTerraformPlan
-// @Router /terraform/plan [POST]
-func CreateTerraformPlan(g *gin.Context) {
-	planId := g.Param("planId")
+// @Router /terraform/{projectId}/plan [POST]
+func (c *TerraformPlanController) CreateTerraformPlan(g *gin.Context) {
 	projectId := g.Param("projectId")
-	g.String(http.StatusOK, "hello world %s %s", planId, projectId)
+	planId, err := c.IacService.RunTerraformPlan(uuid.MustParse(projectId))
+	if err != nil {
+		g.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	g.String(http.StatusOK, planId.String())
 
 }
 
@@ -36,7 +51,7 @@ func CreateTerraformPlan(g *gin.Context) {
 // @Produce json
 // @Success 200 {string} GetTerraformPlan
 // @Router /terraform/{projectId}/plan/{planId} [GET]
-func GetTerraformPlan(g *gin.Context) {
+func (c *TerraformPlanController) GetTerraformPlan(g *gin.Context) {
 	planId := g.Param("planId")
 	projectId := g.Param("projectId")
 	g.String(http.StatusOK, "hello world %s %s", planId, projectId)
@@ -55,7 +70,7 @@ func GetTerraformPlan(g *gin.Context) {
 // @Produce json
 // @Success 200 {string} ApplyTerraformPlan
 // @Router /terraform/{projectId}/plan/{planId}/apply [POST]
-func ApplyTerraformPlan(g *gin.Context) {
+func (c *TerraformPlanController) ApplyTerraformPlan(g *gin.Context) {
 
 }
 
@@ -72,7 +87,7 @@ func ApplyTerraformPlan(g *gin.Context) {
 // @Produce json
 // @Success 200 {string} DeploymentTerraform
 // @Router /terraform/{projectId}/plan/{planId}/apply/{deploymentId} [GET]
-func DeploymentTerraform(g *gin.Context) {
+func (c *TerraformPlanController) DeploymentTerraform(g *gin.Context) {
 
 }
 
@@ -87,8 +102,6 @@ func DeploymentTerraform(g *gin.Context) {
 // @Produce json
 // @Success 200 {string} FetchTerraformPlans
 // @Router /terraform/{projectId}/plan [GET]
-func FetchTerraformPlans(g *gin.Context) {
+func (c *TerraformPlanController) FetchTerraformPlans(g *gin.Context) {
 
 }
-
-//https://github.com/lovemapa/todo-Go

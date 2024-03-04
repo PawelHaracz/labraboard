@@ -4,13 +4,13 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"labraboard/internal/domains/iac"
-	"labraboard/internal/models"
+	"labraboard/internal/eventbus"
 )
 
 type IacConfiguration func(os *IacService) error
 
 type IacService struct {
-	planner    models.Planner
+	publisher  eventbus.EventPublisher
 	repository iac.Repository
 }
 
@@ -22,7 +22,7 @@ func NewIacService(configs ...IacConfiguration) (*IacService, error) {
 		}
 	}
 
-	if is.planner == nil {
+	if is.publisher == nil {
 		return nil, errors.New("planner is not set")
 	}
 	if is.repository == nil {
@@ -32,9 +32,9 @@ func NewIacService(configs ...IacConfiguration) (*IacService, error) {
 	return is, nil
 }
 
-func WithPlanner(p models.Planner) IacConfiguration {
+func WithEventBus(eb eventbus.EventPublisher) IacConfiguration {
 	return func(is *IacService) error {
-		is.planner = p
+		is.publisher = eb
 		return nil
 	}
 }
@@ -60,8 +60,8 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) 
 		return uuid.Nil, err
 	}
 
-	plan, err := svc.planner.Plan(planId)
-	if plan == false {
+	svc.publisher.Publish(eventbus.TRIGGERED_PLAN, planId)
+	if err != nil {
 		return uuid.Nil, err
 	}
 
