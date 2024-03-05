@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	dbmemory "labraboard/internal/domains/iac/memory"
 	eb "labraboard/internal/eventbus"
 	ebmemory "labraboard/internal/eventbus/memory"
 	"labraboard/internal/routers"
+	iacSvc "labraboard/internal/services/iac"
 	"runtime"
 )
 
@@ -48,7 +50,21 @@ func ConfigureWorkers() {
 
 	go func() {
 		for msg := range pl {
-			fmt.Println("Received message:", msg)
+			switch obj := msg.(type) {
+			case uuid.UUID:
+				fmt.Println("Received message:", msg)
+				tofu, err := iacSvc.NewTofuIacService("")
+				if err != nil {
+					fmt.Println("error:", err)
+				}
+				_, err = tofu.Plan(obj)
+				if err != nil {
+					panic(err)
+				}
+			default:
+				fmt.Errorf("cannot handle message type %T", obj)
+			}
+
 		}
 	}()
 }

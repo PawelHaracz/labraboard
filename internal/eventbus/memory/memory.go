@@ -7,10 +7,10 @@ import (
 
 type PubSub struct {
 	mu   sync.RWMutex
-	subs map[eb.Events][]chan interface{}
+	subs map[eb.EventName][]chan interface{}
 }
 
-func (ps *PubSub) Subscribe(key eb.Events) chan interface{} {
+func (ps *PubSub) Subscribe(key eb.EventName) chan interface{} {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
@@ -20,7 +20,7 @@ func (ps *PubSub) Subscribe(key eb.Events) chan interface{} {
 	return ch
 }
 
-func (ps *PubSub) Publish(key eb.Events, event interface{}) {
+func (ps *PubSub) Publish(key eb.EventName, event interface{}) {
 	ps.mu.RLock()
 	defer ps.mu.RUnlock()
 
@@ -29,7 +29,7 @@ func (ps *PubSub) Publish(key eb.Events, event interface{}) {
 	}
 }
 
-func (ps *PubSub) Unsubscribe(key eb.Events, ch chan interface{}) {
+func (ps *PubSub) Unsubscribe(key eb.EventName, ch chan interface{}) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
@@ -44,14 +44,14 @@ func (ps *PubSub) Unsubscribe(key eb.Events, ch chan interface{}) {
 
 func newMemoryPublisher() *PubSub {
 	return &PubSub{
-		subs: make(map[eb.Events][]chan interface{}),
+		subs: make(map[eb.EventName][]chan interface{}),
 	}
 }
 
-func NewMemoryEventBus() *eb.EventBus {
+func NewMemoryEventBus() *eb.Bus {
 	ps := newMemoryPublisher()
 
-	return &eb.EventBus{
+	return &eb.Bus{
 		EventPublisher:  ps,
 		EventSubscriber: ps,
 	}
