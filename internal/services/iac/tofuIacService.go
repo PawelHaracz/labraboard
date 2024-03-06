@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/terraform-exec/tfexec"
+	entities "labraboard/internal/entities"
 	"log"
 )
 
@@ -72,16 +73,17 @@ func (svc *TofuIacService) Plan(planId uuid.UUID) (*Plan, error) {
 	if err := jsonWriter.Flush(); err != nil {
 		return nil, errors.New("error running Flush")
 	}
+	r := bytes.NewReader(b.Bytes())
+	plans, err := entities.SerializeIacTerraformPlanJsons(r)
+	if err != nil {
+		return nil, errors.New("Cannot reade plan")
+	}
+	//todo convert plans to more better object
 
-	byt := b.String()
-	log.Println(byt)
-	//var result string
-	//if err := json.Unmarshal(byt, &result); err != nil {
-	//	return nil, errors.New("error running jsonToMap")
-	//}
 	return &Plan{
 		//plan: result,
 		Id:   planId,
 		Type: Tofu,
+		plan: plans,
 	}, nil
 }
