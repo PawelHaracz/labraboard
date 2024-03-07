@@ -1,6 +1,7 @@
-package entities
+package helpers
 
 import (
+	"labraboard/internal/entities"
 	"os"
 	"testing"
 )
@@ -12,7 +13,9 @@ func TestIacTerraformPlanJsons(t *testing.T) {
 		t.Fail()
 	}
 	defer f.Close()
-	iacTerraformPlanJsons, err := SerializeIacTerraformPlanJsons(f)
+
+	serializer := NewSerializer[entities.IacTerraformPlanJson]()
+	iacTerraformPlanJsons, err := serializer.SerializeJsonl(f)
 	if err != nil {
 		t.Errorf(err.Error())
 	}

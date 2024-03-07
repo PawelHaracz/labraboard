@@ -10,13 +10,15 @@ import (
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	entities "labraboard/internal/entities"
+	"labraboard/internal/entities"
+	"labraboard/internal/helpers"
 	"log"
 )
 
 type TofuIacService struct {
 	iacFolderPath string
 	tf            *tfexec.Terraform
+	serializer    *helpers.Serializer[entities.IacTerraformPlanJson]
 }
 
 func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
@@ -45,24 +47,25 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 		log.Fatalf("error running Init: %s", err)
 	}
 
+	serializer := helpers.NewSerializer[entities.IacTerraformPlanJson]()
+
 	return &TofuIacService{
 		iacFolderPath: iacFolderPath,
 		tf:            tf,
+		serializer:    serializer,
 	}, nil
 }
 
 func (svc *TofuIacService) Plan(planId uuid.UUID) (*Plan, error) {
 	var b bytes.Buffer
 	jsonWriter := bufio.NewWriter(&b)
-	//planConfig := []tfexec.PlanOption{
-	//	tfexec.Lock(true),
-	//	tfexec.Destroy(false),
-	//	tfexec.Refresh(false),
-	//}
-	//p, err := svc.tf.PlanJSON(context.Background(), jsonWriter, planConfig...)
-	p, err := svc.tf.PlanJSON(context.Background(), jsonWriter)
+	planConfig := []tfexec.PlanOption{
+		tfexec.Lock(true),
+		tfexec.Destroy(false),
+		tfexec.Refresh(false),
+	}
+	p, err := svc.tf.PlanJSON(context.Background(), jsonWriter, planConfig...)
 	if err != nil {
-		//log.Fatalf("error running Plan: %s", err)
 		return nil, errors.New("error running Plan")
 
 	}
@@ -74,7 +77,7 @@ func (svc *TofuIacService) Plan(planId uuid.UUID) (*Plan, error) {
 		return nil, errors.New("error running Flush")
 	}
 	r := bytes.NewReader(b.Bytes())
-	plans, err := entities.SerializeIacTerraformPlanJsons(r)
+	plans, err := svc.serializer.SerializeJsonl(r)
 	if err != nil {
 		return nil, errors.New("Cannot reade plan")
 	}

@@ -1,8 +1,6 @@
 package entities
 
 import (
-	"encoding/json"
-	"io"
 	"time"
 )
 
@@ -35,17 +33,4 @@ type IacTerraformPlanSummaryChangesJson struct {
 	Change    int    `json:"change"`
 	Remove    int    `json:"remove"`
 	Operation string `json:"operation"`
-}
-
-func SerializeIacTerraformPlanJsons(file io.Reader) ([]IacTerraformPlanJson, error) {
-	var iacTerraformPlanJsons []IacTerraformPlanJson
-	decoder := json.NewDecoder(file)
-	for decoder.More() {
-		var iacTerraformPlanJson IacTerraformPlanJson
-		if err := decoder.Decode(&iacTerraformPlanJson); err != nil {
-			return nil, err
-		}
-		iacTerraformPlanJsons = append(iacTerraformPlanJsons, iacTerraformPlanJson)
-	}
-	return iacTerraformPlanJsons, nil
 }
