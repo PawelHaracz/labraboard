@@ -5,7 +5,8 @@ import "github.com/google/uuid"
 type IacType string
 
 const (
-	Tofu IacType = "tofu"
+	Tofu      IacType = "tofu"
+	Terraform IacType = "terraform"
 )
 
 type Plan struct {

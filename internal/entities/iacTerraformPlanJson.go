@@ -4,11 +4,19 @@ import (
 	"time"
 )
 
+type IacPlatformPlanType string
+
+var (
+	Version       IacPlatformPlanType
+	PlannedChange IacPlatformPlanType
+	ChangeSummary IacPlatformPlanType
+)
+
 type IacTerraformPlanJson struct {
 	Message        string                              `json:"@message"`
 	Module         string                              `json:"@module"`
 	Timestamp      time.Time                           `json:"@timestamp"`
-	Type           string                              `json:"type"`
+	Type           IacPlatformPlanType                 `json:"type"`
 	Change         *IacTerraformPlanChangeJson         `json:"change"`
 	SummaryChanges *IacTerraformPlanSummaryChangesJson `json:"changes"`
 }
