@@ -28,7 +28,7 @@ func TestNewIacService(t *testing.T) {
 	}
 
 	if is.repository == nil {
-		t.Errorf("error: %v", "IacService.repository is nil")
+		t.Errorf("error: %v", "IacService.repositories is nil")
 	}
 
 	aggregate, _ := aggregates.NewIac(uuid.New())

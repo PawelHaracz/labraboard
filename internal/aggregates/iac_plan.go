@@ -5,8 +5,6 @@ import (
 	"labraboard/internal/entities"
 )
 
-var ()
-
 type PlanTypeAction string
 type IaCPlanType string
 

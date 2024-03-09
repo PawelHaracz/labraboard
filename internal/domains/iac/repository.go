@@ -9,11 +9,11 @@ import (
 
 var (
 	// ErrIacNotFound is returned when a IaC is not found.
-	ErrIacNotFound = errors.New("the IaC was not found in the repository")
-	// ErrFailedToAddIac is returned when the IaC could not be added to the repository.
-	ErrFailedToAddIac = errors.New("failed to add the IaC to the repository")
-	// ErrUpdateIac is returned when the IaC could not be updated in the repository.
-	ErrUpdateIac = errors.New("failed to update the IaC in the repository")
+	ErrIacNotFound = errors.New("the IaC was not found in the repositories")
+	// ErrFailedToAddIac is returned when the IaC could not be added to the repositories.
+	ErrFailedToAddIac = errors.New("failed to add the IaC to the repositories")
+	// ErrUpdateIac is returned when the IaC could not be updated in the repositories.
+	ErrUpdateIac = errors.New("failed to update the IaC in the repositories")
 )
 
 type Repository interface {

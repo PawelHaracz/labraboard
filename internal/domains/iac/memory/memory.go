@@ -31,7 +31,7 @@ func (mr *Repository) Get(id uuid.UUID) (aggregates.Iac, error) {
 	//return aggregates.Iac{}, iac.ErrIacNotFound
 }
 
-// Add will add a new customer to the repository
+// Add will add a new customer to the repositories
 func (mr *Repository) Add(c aggregates.Iac) error {
 	if mr.iacs == nil {
 		// Saftey check if customers is not create, shouldn't happen if using the Factory, but you never know
@@ -39,7 +39,7 @@ func (mr *Repository) Add(c aggregates.Iac) error {
 		mr.iacs = make(map[uuid.UUID]aggregates.Iac)
 		mr.Unlock()
 	}
-	// Make sure Customer isn't already in the repository
+	// Make sure Customer isn't already in the repositories
 	if _, ok := mr.iacs[c.GetID()]; ok {
 		return fmt.Errorf("customer already exists: %w", iac.ErrFailedToAddIac)
 	}
@@ -51,7 +51,7 @@ func (mr *Repository) Add(c aggregates.Iac) error {
 
 // Update will replace an existing customer information with the new customer information
 func (mr *Repository) Update(c aggregates.Iac) error {
-	// Make sure Customer is in the repository
+	// Make sure Customer is in the repositories
 	if _, ok := mr.iacs[c.GetID()]; !ok {
 		return fmt.Errorf("customer does not exist: %w", iac.ErrUpdateIac)
 	}

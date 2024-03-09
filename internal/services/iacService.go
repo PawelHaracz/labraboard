@@ -26,7 +26,7 @@ func NewIacService(configs ...IacConfiguration) (*IacService, error) {
 		return nil, errors.New("planner is not set")
 	}
 	if is.repository == nil {
-		return nil, errors.New("repository is not set")
+		return nil, errors.New("repositories is not set")
 	}
 
 	return is, nil

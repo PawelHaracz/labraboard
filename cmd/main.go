@@ -1,10 +1,14 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/ilyakaznacheev/cleanenv"
+	"labraboard"
 	dbmemory "labraboard/internal/domains/iac/memory"
+	"labraboard/internal/domains/iac/postgres"
 	eb "labraboard/internal/eventbus"
 	ebmemory "labraboard/internal/eventbus/memory"
 	"labraboard/internal/routers"
@@ -17,15 +21,37 @@ var (
 )
 
 func main() {
+	var cfg labraboard.Config
+	configFile := flag.String("config", "", "config file, if empty then use env variables")
+	flag.Parse()
+	if *configFile == "" {
+		err := cleanenv.ReadEnv(&cfg)
+		if err != nil {
+			panic("cannot read config file")
+		}
+	} else {
+		err := cleanenv.ReadConfig(*configFile, &cfg)
+		if err != nil {
+			panic("cannot read config file")
+		}
+	}
 	ConfigRuntime()
 	go ConfigureWorkers()
 	gin.SetMode(gin.ReleaseMode)
+	db := postgres.NewDatabase(cfg.ConnectionString)
+	defer func(db *postgres.Database) {
+		err := db.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(db)
+	//todo add repository for postgresql
 	repository, err := dbmemory.NewRepository()
 	if err != nil {
 		panic(err)
 	}
 	routersInit := routers.InitRouter(eventBus.EventPublisher, repository)
-	err = routersInit.Run("0.0.0.0:8080")
+	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
 		panic(err)
 	}

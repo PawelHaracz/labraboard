@@ -14,7 +14,7 @@ func TestMemory_GetIac(t *testing.T) {
 		expectedErr error
 	}
 
-	// Create a fake customer to add to repository
+	// Create a fake customer to add to repositories
 	preparedId, _ := uuid.Parse("f47ac10b-58cc-0372-8567-0e02b2c3d479")
 	iac, err := aggregates.NewIac(preparedId)
 	if err != nil {

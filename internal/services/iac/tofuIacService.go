@@ -34,7 +34,6 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 
 	execPath, err := installer.Install(context.Background())
 	if err != nil {
-		log.Fatalf("error installing Terraform: %s", err)
 		return nil, errors.New("error installing Terraform")
 	}
 
