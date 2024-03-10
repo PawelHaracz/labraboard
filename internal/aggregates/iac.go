@@ -41,11 +41,19 @@ func (c *Iac) AddPlan(id uuid.UUID) {
 	})
 }
 
-func (c *Iac) GetPlan(id uuid.UUID) (vo.Plans, error) {
+func (c *Iac) getPlan(id uuid.UUID) (*vo.Plans, error) {
 	for _, plan := range c.plans {
 		if plan.Id == id {
-			return plan, nil
+			return &plan, nil
 		}
 	}
-	return vo.Plans{}, ErrPlanNotFound
+	return nil, ErrPlanNotFound
+}
+
+func (c *Iac) UpdatePlan(id uuid.UUID, status vo.PlanStatus) {
+	if plan, err := c.getPlan(id); err == nil {
+		utc := time.Now().UTC()
+		plan.Status = status
+		plan.ModifyOn = utc
+	}
 }

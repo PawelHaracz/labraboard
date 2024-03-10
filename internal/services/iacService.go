@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"labraboard/internal/domains/iac"
 	"labraboard/internal/eventbus"
+	"labraboard/internal/eventbus/events"
 )
 
 type IacConfiguration func(os *IacService) error
@@ -60,7 +61,11 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) 
 		return uuid.Nil, err
 	}
 
-	svc.publisher.Publish(eventbus.TRIGGERED_PLAN, planId)
+	var event = events.PlanTriggered{
+		ProjectId: projectId,
+		PlanId:    planId}
+
+	svc.publisher.Publish(eventbus.TRIGGERED_PLAN, event)
 	if err != nil {
 		return uuid.Nil, err
 	}

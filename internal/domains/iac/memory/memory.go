@@ -10,14 +10,16 @@ import (
 
 // Repository fulfills the IacRepository interface
 type Repository struct {
-	iacs map[uuid.UUID]aggregates.Iac
+	iacs  map[uuid.UUID]aggregates.Iac
+	plans map[uuid.UUID]aggregates.IacPlan
 	sync.Mutex
 }
 
 // NewRepository returns a new Repository
 func NewRepository() (*Repository, error) {
 	return &Repository{
-		iacs: make(map[uuid.UUID]aggregates.Iac),
+		iacs:  make(map[uuid.UUID]aggregates.Iac),
+		plans: make(map[uuid.UUID]aggregates.IacPlan),
 	}, nil
 }
 
@@ -28,7 +30,6 @@ func (mr *Repository) Get(id uuid.UUID) (aggregates.Iac, error) {
 	}
 
 	return aggregates.NewIac(id)
-	//return aggregates.Iac{}, iac.ErrIacNotFound
 }
 
 // Add will add a new customer to the repositories
@@ -57,6 +58,45 @@ func (mr *Repository) Update(c aggregates.Iac) error {
 	}
 	mr.Lock()
 	mr.iacs[c.GetID()] = c
+	mr.Unlock()
+	return nil
+}
+
+// GetPlan Get finds a customer by ID
+func (mr *Repository) GetPlan(id uuid.UUID) (*aggregates.IacPlan, error) {
+	if plan, ok := mr.plans[id]; ok {
+		return &plan, nil
+	}
+
+	return aggregates.NewIacPlan(id, aggregates.Terraform)
+}
+
+// AddPlan Add will add a new customer to the repositories
+func (mr *Repository) AddPlan(c aggregates.IacPlan) error {
+	if mr.plans == nil {
+		// Saftey check if customers is not create, shouldn't happen if using the Factory, but you never know
+		mr.Lock()
+		mr.plans = make(map[uuid.UUID]aggregates.IacPlan)
+		mr.Unlock()
+	}
+	// Make sure Customer isn't already in the repositories
+	if _, ok := mr.plans[c.GetID()]; ok {
+		return fmt.Errorf("customer already exists: %w", iac.ErrFailedToAddIac)
+	}
+	mr.Lock()
+	mr.plans[c.GetID()] = c
+	mr.Unlock()
+	return nil
+}
+
+// UpdatePlan Update will replace an existing customer information with the new customer information
+func (mr *Repository) UpdatePlan(c aggregates.IacPlan) error {
+	// Make sure Customer is in the repositories
+	if _, ok := mr.plans[c.GetID()]; !ok {
+		return fmt.Errorf("customer does not exist: %w", iac.ErrUpdateIac)
+	}
+	mr.Lock()
+	mr.plans[c.GetID()] = c
 	mr.Unlock()
 	return nil
 }

@@ -1,20 +1,27 @@
 package iac
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"labraboard/internal/aggregates"
+)
 
-type IacType string
+type Type string
 
 const (
-	Tofu      IacType = "tofu"
-	Terraform IacType = "terraform"
+	Tofu      Type = "tofu"
+	Terraform Type = "terraform"
 )
 
 type Plan struct {
-	Type IacType
+	Type Type
 	Id   uuid.UUID
-	plan interface{}
+	plan aggregates.IacPlan
 }
 
 type LabraboardIacService interface {
 	Plan(planId uuid.UUID) (*Plan, error)
+}
+
+func (plan *Plan) GetPlan() *aggregates.IacPlan {
+	return &plan.plan
 }

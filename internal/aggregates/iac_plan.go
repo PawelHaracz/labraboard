@@ -3,16 +3,10 @@ package aggregates
 import (
 	"github.com/google/uuid"
 	"labraboard/internal/entities"
+	"labraboard/internal/valueobjects/iacPlans"
 )
 
-type PlanTypeAction string
 type IaCPlanType string
-
-var (
-	Create PlanTypeAction = "create"
-	Update PlanTypeAction = "update"
-	Delete PlanTypeAction = "delete"
-)
 
 var (
 	Terraform IaCPlanType = "terraform"
@@ -21,22 +15,9 @@ var (
 
 type IacPlan struct {
 	id            uuid.UUID
-	changeSummary ChangeSummaryIacPlan
-	changes       []ChangeIacPlanner
+	changeSummary iacPlans.ChangeSummaryIacPlan
+	changes       []iacPlans.ChangesIacPlan
 	planType      IaCPlanType
-}
-
-type ChangeSummaryIacPlan struct {
-	Add    int
-	Change int
-	Remove int
-}
-
-type ChangeIacPlanner struct {
-	ResourceType string
-	ResourceName string
-	Provider     string
-	Action       PlanTypeAction
 }
 
 func NewIacPlan(id uuid.UUID, planType IaCPlanType) (*IacPlan, error) {
@@ -46,25 +27,30 @@ func NewIacPlan(id uuid.UUID, planType IaCPlanType) (*IacPlan, error) {
 	}, nil
 }
 
-func newChangeIacPlanner(resourceType string, resourceName string, provider string, action PlanTypeAction) *ChangeIacPlanner {
-	return &ChangeIacPlanner{
-		resourceType,
-		resourceName,
-		provider,
-		action,
+func newChangeIacPlanner(resourceType string, resourceName string, provider string, action iacPlans.PlanTypeAction) *iacPlans.ChangesIacPlan {
+	return &iacPlans.ChangesIacPlan{
+		ResourceType: resourceType,
+		ResourceName: resourceName,
+		Provider:     provider,
+		Action:       action,
 	}
 }
 
-func newChangeSummaryIacPlan(added int, changed int, removed int) *ChangeSummaryIacPlan {
-	return &ChangeSummaryIacPlan{
-		added,
-		changed,
-		removed,
+func newChangeSummaryIacPlan(added int, changed int, removed int) *iacPlans.ChangeSummaryIacPlan {
+	return &iacPlans.ChangeSummaryIacPlan{
+		Add:    added,
+		Change: changed,
+		Remove: removed,
 	}
+}
+
+// GetID returns the Iac root entity ID
+func (plan *IacPlan) GetID() uuid.UUID {
+	return plan.id
 }
 
 func (plan *IacPlan) AddChanges(plans ...entities.IacTerraformPlanJson) {
-	var changes []ChangeIacPlanner
+	var changes []iacPlans.ChangesIacPlan
 
 	for _, p := range plans {
 		if p.Type == entities.Version {
@@ -78,7 +64,7 @@ func (plan *IacPlan) AddChanges(plans ...entities.IacTerraformPlanJson) {
 			plan.changeSummary = *summary
 
 		} else {
-			planner := newChangeIacPlanner(p.Change.Resource.ResourceType, p.Change.Resource.ResourceName, p.Change.Resource.Provider, PlanTypeAction(p.Change.Action))
+			planner := newChangeIacPlanner(p.Change.Resource.ResourceType, p.Change.Resource.ResourceName, p.Change.Resource.Provider, iacPlans.PlanTypeAction(p.Change.Action))
 			changes = append(changes, *planner)
 		}
 
