@@ -94,6 +94,6 @@ func (svc *TofuIacService) Plan(planId uuid.UUID) (*Plan, error) {
 		//plan: result,
 		Id:   planId,
 		Type: Tofu,
-		plan: plan,
+		plan: *plan,
 	}, nil
 }

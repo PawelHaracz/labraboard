@@ -7,13 +7,8 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 	"labraboard"
 	dbmemory "labraboard/internal/domains/iac/memory"
-	"labraboard/internal/domains/iac/postgres"
-	eb "labraboard/internal/eventbus"
-	"labraboard/internal/eventbus/events"
 	ebmemory "labraboard/internal/eventbus/memory"
 	"labraboard/internal/routers"
-	iacSvc "labraboard/internal/services/iac"
-	vo "labraboard/internal/valueobjects"
 	"runtime"
 )
 
@@ -38,13 +33,13 @@ func main() {
 	}
 	ConfigRuntime()
 	gin.SetMode(gin.ReleaseMode)
-	db := postgres.NewDatabase(cfg.ConnectionString)
-	defer func(db *postgres.Database) {
-		err := db.Close()
-		if err != nil {
-			panic(err)
-		}
-	}(db)
+	//db := postgres.NewDatabase(cfg.ConnectionString)
+	//defer func(db *postgres.Database) {
+	//	err := db.Close()
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//}(db)
 	//todo add repository for postgresql
 	repository, err := dbmemory.NewRepository()
 	if err != nil {
@@ -72,49 +67,5 @@ func ConfigRuntime() {
 }
 
 func ConfigureWorkers(repository *dbmemory.Repository) {
-	pl := eventBus.Subscribe(eb.TRIGGERED_PLAN)
-	//defer eventBus.Unsubscribe(eb.TRIGGERED_PLAN, pl)
-
-	go func(repository *dbmemory.Repository) {
-		for msg := range pl {
-			switch obj := msg.(type) {
-			case events.PlanTriggered:
-				fmt.Println("Received message:", msg)
-				iac, err := repository.Get(obj.ProjectId)
-				iac.UpdatePlan(obj.PlanId, vo.Succeed)
-				if err = repository.Update(iac); err != nil {
-					panic(err)
-				}
-
-				tofu, err := iacSvc.NewTofuIacService("")
-				if err != nil {
-					fmt.Println("error:", err)
-				}
-
-				plan, err := tofu.Plan(obj.PlanId)
-				if err != nil {
-					iac.UpdatePlan(obj.PlanId, vo.Failed)
-					if err = repository.Update(iac); err != nil {
-						panic(err)
-					}
-				}
-
-				if err = repository.AddPlan(*plan.GetPlan()); err != nil {
-					iac.UpdatePlan(obj.PlanId, vo.Failed)
-					if err = repository.Update(iac); err != nil {
-						panic(err)
-					}
-				}
-
-				iac.UpdatePlan(obj.PlanId, vo.Succeed)
-				if err = repository.Update(iac); err != nil {
-					panic(err)
-				}
-
-			default:
-				fmt.Errorf("cannot handle message type %T", obj)
-			}
-
-		}
-	}(repository)
+	handlePlan(repository)
 }
