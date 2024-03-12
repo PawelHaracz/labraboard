@@ -13,7 +13,6 @@ import (
 	"labraboard/internal/aggregates"
 	"labraboard/internal/entities"
 	"labraboard/internal/helpers"
-	"log"
 )
 
 type TofuIacService struct {
@@ -22,7 +21,7 @@ type TofuIacService struct {
 	serializer    *helpers.Serializer[entities.IacTerraformPlanJson]
 }
 
-func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
+func NewTofuIacService(iacFolderPath string, useLocalBackend bool) (*TofuIacService, error) {
 	if iacFolderPath == "" {
 		return nil, errors.New("iacFolderPath is empty")
 	}
@@ -39,12 +38,23 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 
 	tf, err := tfexec.NewTerraform(iacFolderPath, execPath)
 	if err != nil {
-		log.Fatalf("error running NewTerraform: %s", err)
+		return nil, err
+		//log.Fatalf("error running NewTerraform: %s", err)
 	}
 
-	err = tf.Init(context.Background(), tfexec.Upgrade(true))
+	var config = []tfexec.InitOption{
+		tfexec.Upgrade(true),
+	}
+	if useLocalBackend {
+		//config = append(config, tfexec.BackendConfig(fmt.Sprintf("%s", iacFolderPath)))
+		//config = append(config, tfexec.Backend(false))
+
+	}
+
+	err = tf.Init(context.Background(), config...)
 	if err != nil {
-		log.Fatalf("error running Init: %s", err)
+		return nil, err
+		//log.Fatalf("error running Init: %s", err)
 	}
 
 	serializer := helpers.NewSerializer[entities.IacTerraformPlanJson]()
@@ -94,6 +104,6 @@ func (svc *TofuIacService) Plan(planId uuid.UUID) (*Plan, error) {
 		//plan: result,
 		Id:   planId,
 		Type: Tofu,
-		plan: *plan,
+		plan: plan,
 	}, nil
 }

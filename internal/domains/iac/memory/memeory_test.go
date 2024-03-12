@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
+	vo "labraboard/internal/valueobjects"
 	"testing"
 )
 
@@ -16,7 +17,7 @@ func TestMemory_GetIac(t *testing.T) {
 
 	// Create a fake customer to add to repositories
 	preparedId, _ := uuid.Parse("f47ac10b-58cc-0372-8567-0e02b2c3d479")
-	iac, err := aggregates.NewIac(preparedId)
+	iac, err := aggregates.NewIac(preparedId, vo.Terraform)
 	if err != nil {
 		t.Fatal(err)
 	}

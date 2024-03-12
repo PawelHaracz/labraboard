@@ -42,16 +42,15 @@ func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTrigger
 	}()
 
 	iac, err := repository.Get(obj.ProjectId)
-	iac.UpdatePlan(obj.PlanId, vo.Succeed)
+
 	if err = repository.Update(iac); err != nil {
 		panic(err)
 	}
 
-	tofu, err := iacSvc.NewTofuIacService("/tmp/foo/101-terraform-job/terraform")
+	tofu, err := iacSvc.NewTofuIacService("/tmp/foo/101-terraform-job/terraform", true)
 	if err != nil {
-		fmt.Println("error:", err)
+		panic(err)
 	}
-
 	plan, err := tofu.Plan(obj.PlanId)
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
@@ -59,7 +58,7 @@ func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTrigger
 			panic(err)
 		}
 	}
-
+	iac.UpdatePlan(obj.PlanId, vo.Succeed)
 	if err = repository.AddPlan(*plan.GetPlan()); err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		if err = repository.Update(iac); err != nil {

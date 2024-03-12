@@ -6,12 +6,12 @@ import (
 	_ "time"
 )
 
-type PlanType int
+type IaCType int
 
 type PlanStatus string
 
 const (
-	Terraform PlanType = iota
+	Terraform IaCType = iota
 )
 
 const (
@@ -23,7 +23,6 @@ const (
 
 type Plans struct {
 	Id        uuid.UUID
-	PlanType  PlanType
 	Status    PlanStatus
 	CreatedOn time.Time
 	ModifyOn  time.Time

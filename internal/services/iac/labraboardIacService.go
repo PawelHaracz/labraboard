@@ -15,7 +15,7 @@ const (
 type Plan struct {
 	Type Type
 	Id   uuid.UUID
-	plan aggregates.IacPlan
+	plan *aggregates.IacPlan
 }
 
 type LabraboardIacService interface {
@@ -23,5 +23,5 @@ type LabraboardIacService interface {
 }
 
 func (plan *Plan) GetPlan() *aggregates.IacPlan {
-	return &plan.plan
+	return plan.plan
 }

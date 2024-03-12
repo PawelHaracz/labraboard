@@ -13,14 +13,16 @@ var (
 )
 
 type Iac struct {
-	id    uuid.UUID
-	plans []vo.Plans
+	id      uuid.UUID
+	plans   []vo.Plans
+	IacType vo.IaCType
 }
 
-func NewIac(id uuid.UUID) (Iac, error) {
+func NewIac(id uuid.UUID, iacType vo.IaCType) (Iac, error) {
 	aggregate := &Iac{}
 	aggregate.id = id
 	aggregate.plans = []vo.Plans{}
+	aggregate.IacType = iacType
 
 	return *aggregate, nil
 }
@@ -37,7 +39,6 @@ func (c *Iac) AddPlan(id uuid.UUID) {
 		ModifyOn:  utc,
 		CreatedOn: utc,
 		Id:        id,
-		PlanType:  vo.Terraform,
 	})
 }
 

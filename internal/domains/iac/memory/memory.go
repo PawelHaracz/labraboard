@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/domains/iac"
+	vo "labraboard/internal/valueobjects"
 	"sync"
 )
 
@@ -29,7 +30,7 @@ func (mr *Repository) Get(id uuid.UUID) (aggregates.Iac, error) {
 		return iac, nil
 	}
 
-	return aggregates.NewIac(id)
+	return aggregates.NewIac(id, vo.Terraform)
 }
 
 // Add will add a new customer to the repositories
