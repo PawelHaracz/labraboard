@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
@@ -46,7 +47,7 @@ func NewTofuIacService(iacFolderPath string, useLocalBackend bool) (*TofuIacServ
 		tfexec.Upgrade(true),
 	}
 	if useLocalBackend {
-		//config = append(config, tfexec.BackendConfig(fmt.Sprintf("%s", iacFolderPath)))
+		config = append(config, tfexec.BackendConfig(fmt.Sprintf("%s", "/tmp/terraform.tfstate")))
 		//config = append(config, tfexec.Backend(false))
 
 	}

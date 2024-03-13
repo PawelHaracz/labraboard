@@ -12,10 +12,14 @@ var (
 	ErrPlanNotFound = errors.New("plan not found")
 )
 
+type IacBackendStore struct {
+}
+
 type Iac struct {
-	id      uuid.UUID
-	plans   []vo.Plans
-	IacType vo.IaCType
+	id              uuid.UUID
+	plans           []vo.Plans
+	IacType         vo.IaCType
+	IacBackendStore *IacBackendStore
 }
 
 func NewIac(id uuid.UUID, iacType vo.IaCType) (Iac, error) {
