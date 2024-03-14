@@ -26,6 +26,27 @@ func handlePlan(repository *dbmemory.Repository) {
 	}(repository)
 }
 
+func createBackendFile(path string, statePath string) error {
+	content := `terraform {
+  backend "local" {
+    path = "%s"
+  }
+}`
+
+	file, err := os.Create(fmt.Sprintf("%s/backend_override.tf", path))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = fmt.Fprintf(file, content, statePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTriggered) {
 	gitRepo, err := git.PlainClone("/tmp/foo", false, &git.CloneOptions{
 		URL:      "https://github.com/microsoft/terraform-azure-devops-starter.git",
@@ -46,12 +67,21 @@ func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTrigger
 	if err = repository.Update(iac); err != nil {
 		panic(err)
 	}
+	if err := createBackendFile("/tmp/foo/101-terraform-job/terraform", "./.local-state"); err != nil {
+		panic(err)
+	}
 
 	tofu, err := iacSvc.NewTofuIacService("/tmp/foo/101-terraform-job/terraform", true)
 	if err != nil {
 		panic(err)
 	}
-	plan, err := tofu.Plan(obj.PlanId)
+	envs := map[string]string{
+		"ARM_TENANT_ID":       "4c83ec3e-26b4-444f-afb7-8b171cd1b420",
+		"ARM_CLIENT_ID":       "99cc9476-40fd-48b6-813f-e79e0ff830fc",
+		"ARM_CLIENT_SECRET":   "fixit",
+		"ARM_SUBSCRIPTION_ID": "cb5863b1-784d-4813-b2c7-e87919081ecb",
+	}
+	plan, err := tofu.Plan(obj.PlanId, envs)
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		if err = repository.Update(iac); err != nil {

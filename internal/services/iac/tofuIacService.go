@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
@@ -47,7 +46,7 @@ func NewTofuIacService(iacFolderPath string, useLocalBackend bool) (*TofuIacServ
 		tfexec.Upgrade(true),
 	}
 	if useLocalBackend {
-		config = append(config, tfexec.BackendConfig(fmt.Sprintf("%s", "/tmp/terraform.tfstate")))
+		//config = append(config, tfexec.BackendConfig(fmt.Sprintf("%s", "/tmp/terraform.tfstate")))
 		//config = append(config, tfexec.Backend(false))
 
 	}
@@ -67,7 +66,7 @@ func NewTofuIacService(iacFolderPath string, useLocalBackend bool) (*TofuIacServ
 	}, nil
 }
 
-func (svc *TofuIacService) Plan(planId uuid.UUID) (*Plan, error) {
+func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string) (*Plan, error) {
 	var b bytes.Buffer
 	jsonWriter := bufio.NewWriter(&b)
 	planConfig := []tfexec.PlanOption{
@@ -75,7 +74,12 @@ func (svc *TofuIacService) Plan(planId uuid.UUID) (*Plan, error) {
 		tfexec.Destroy(false),
 		tfexec.Refresh(false),
 	}
+	err := svc.tf.SetEnv(envs)
+	if err != nil {
+		return nil, err
+	}
 	p, err := svc.tf.PlanJSON(context.Background(), jsonWriter, planConfig...)
+	//p, err := svc.tf.PlanJSON(context.Background(), jsonWriter)
 	if err != nil {
 		return nil, errors.New("error running Plan")
 

@@ -11,7 +11,7 @@ func TestNewTofuIacService(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 
-	p, err := iac.Plan(uuid.New())
+	p, err := iac.Plan(uuid.New(), nil)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
