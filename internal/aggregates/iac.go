@@ -12,14 +12,11 @@ var (
 	ErrPlanNotFound = errors.New("plan not found")
 )
 
-type IacBackendStore struct {
-}
-
 type Iac struct {
-	id              uuid.UUID
-	plans           []vo.Plans
-	IacType         vo.IaCType
-	IacBackendStore *IacBackendStore
+	id           uuid.UUID
+	plans        []vo.Plans
+	IacType      vo.IaCType
+	backendStore vo.IacBackendStore
 }
 
 func NewIac(id uuid.UUID, iacType vo.IaCType) (Iac, error) {
@@ -61,4 +58,8 @@ func (c *Iac) UpdatePlan(id uuid.UUID, status vo.PlanStatus) {
 		plan.Status = status
 		plan.ModifyOn = utc
 	}
+}
+
+func (iac *Iac) GetEnvs() map[string]string {
+	return iac.backendStore.GetEnvs()
 }

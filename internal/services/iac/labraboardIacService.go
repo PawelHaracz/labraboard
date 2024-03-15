@@ -16,7 +16,6 @@ type Plan struct {
 	Type Type
 	Id   uuid.UUID
 	plan *aggregates.IacPlan
-	//backendStore *aggregates.IacBackendStore
 }
 
 type LabraboardIacService interface {

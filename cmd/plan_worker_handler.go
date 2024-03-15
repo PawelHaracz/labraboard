@@ -75,13 +75,8 @@ func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTrigger
 	if err != nil {
 		panic(err)
 	}
-	envs := map[string]string{
-		"ARM_TENANT_ID":       "4c83ec3e-26b4-444f-afb7-8b171cd1b420",
-		"ARM_CLIENT_ID":       "99cc9476-40fd-48b6-813f-e79e0ff830fc",
-		"ARM_CLIENT_SECRET":   "fixit",
-		"ARM_SUBSCRIPTION_ID": "cb5863b1-784d-4813-b2c7-e87919081ecb",
-	}
-	plan, err := tofu.Plan(obj.PlanId, envs)
+
+	plan, err := tofu.Plan(obj.PlanId, iac.GetEnvs())
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		if err = repository.Update(iac); err != nil {
