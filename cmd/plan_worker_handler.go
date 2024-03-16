@@ -48,30 +48,40 @@ func createBackendFile(path string, statePath string) error {
 }
 
 func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTriggered) {
-	gitRepo, err := git.PlainClone("/tmp/foo", false, &git.CloneOptions{
-		URL:      "https://github.com/microsoft/terraform-azure-devops-starter.git",
+	iac, err := repository.Get(obj.ProjectId)
+	if err != nil {
+		panic(err)
+	}
+	if iac.Repo == nil {
+		panic("Missing repo url")
+	}
+
+	folderPath := fmt.Sprintf("/tmp/%s", obj.PlanId)
+	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, iac.Repo.Path)
+
+	gitRepo, err := git.PlainClone(folderPath, false, &git.CloneOptions{
+		URL:      iac.Repo.Url,
 		Progress: os.Stdout,
 	})
-	if _, err := gitRepo.Branch("master"); err != nil {
+	// todo handle commit sha from plan
+	if _, err := gitRepo.Branch(iac.Repo.DefaultBranch); err != nil {
 		panic(err)
 	}
 	defer func() {
-		err := os.RemoveAll("/tmp/foo")
+		err := os.RemoveAll(folderPath)
 		if err != nil {
 			return
 		}
 	}()
 
-	iac, err := repository.Get(obj.ProjectId)
-
 	if err = repository.Update(iac); err != nil {
 		panic(err)
 	}
-	if err := createBackendFile("/tmp/foo/101-terraform-job/terraform", "./.local-state"); err != nil {
+	if err := createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
 		panic(err)
 	}
 
-	tofu, err := iacSvc.NewTofuIacService("/tmp/foo/101-terraform-job/terraform", true)
+	tofu, err := iacSvc.NewTofuIacService(tofuFolderPath, true)
 	if err != nil {
 		panic(err)
 	}

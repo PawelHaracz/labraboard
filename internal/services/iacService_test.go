@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/domains/iac/memory"
+	"labraboard/internal/valueobjects"
 	"testing"
 )
 
@@ -31,7 +32,7 @@ func TestNewIacService(t *testing.T) {
 		t.Errorf("error: %v", "IacService.repositories is nil")
 	}
 
-	aggregate, _ := aggregates.NewIac(uuid.New())
+	aggregate, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform)
 	err = is.repository.Add(aggregate)
 
 	if err != nil {

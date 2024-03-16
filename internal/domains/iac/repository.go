@@ -17,7 +17,7 @@ var (
 )
 
 type Repository interface {
-	Get(uuid.UUID) (aggregates.Iac, error)
-	Add(aggregates.Iac) error
-	Update(aggregates.Iac) error
+	Get(uuid.UUID) (*aggregates.Iac, error)
+	Add(*aggregates.Iac) error
+	Update(*aggregates.Iac) error
 }

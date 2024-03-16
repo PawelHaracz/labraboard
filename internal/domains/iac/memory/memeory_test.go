@@ -25,7 +25,7 @@ func TestMemory_GetIac(t *testing.T) {
 	// Create the repo to use, and add some test Data to it for testing
 	// Skip Factory for this
 	repo := Repository{
-		iacs: map[uuid.UUID]aggregates.Iac{
+		iacs: map[uuid.UUID]*aggregates.Iac{
 			id: iac,
 		},
 	}
