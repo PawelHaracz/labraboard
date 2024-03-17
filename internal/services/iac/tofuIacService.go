@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
@@ -21,7 +22,7 @@ type TofuIacService struct {
 	serializer    *helpers.Serializer[entities.IacTerraformPlanJson]
 }
 
-func NewTofuIacService(iacFolderPath string, useLocalBackend bool) (*TofuIacService, error) {
+func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 	if iacFolderPath == "" {
 		return nil, errors.New("iacFolderPath is empty")
 	}
@@ -45,11 +46,6 @@ func NewTofuIacService(iacFolderPath string, useLocalBackend bool) (*TofuIacServ
 	var config = []tfexec.InitOption{
 		tfexec.Upgrade(true),
 	}
-	if useLocalBackend {
-		//config = append(config, tfexec.BackendConfig(fmt.Sprintf("%s", "/tmp/terraform.tfstate")))
-		//config = append(config, tfexec.Backend(false))
-
-	}
 
 	err = tf.Init(context.Background(), config...)
 	if err != nil {
@@ -66,22 +62,33 @@ func NewTofuIacService(iacFolderPath string, useLocalBackend bool) (*TofuIacServ
 	}, nil
 }
 
-func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string) (*Plan, error) {
+func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string, variables []string) (*Plan, error) {
 	var b bytes.Buffer
 	jsonWriter := bufio.NewWriter(&b)
 	planConfig := []tfexec.PlanOption{
 		tfexec.Lock(true),
 		tfexec.Destroy(false),
 		tfexec.Refresh(false),
+		//tfexec.Out("plan.tfplan"),
 	}
-	err := svc.tf.SetEnv(envs)
-	if err != nil {
-		return nil, err
+
+	if len(variables) > 0 {
+		for _, v := range variables {
+			planConfig = append(planConfig, tfexec.Var(v))
+		}
 	}
+	if len(envs) > 0 {
+		err := svc.tf.SetEnv(envs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	p, err := svc.tf.PlanJSON(context.Background(), jsonWriter, planConfig...)
 	//p, err := svc.tf.PlanJSON(context.Background(), jsonWriter)
+	//p, err := svc.tf.Plan(context.Background(), planConfig...)
 	if err != nil {
-		return nil, errors.New("error running Plan")
+		return nil, fmt.Errorf("%s: %v", "error running Plan", err)
 
 	}
 	if !p {

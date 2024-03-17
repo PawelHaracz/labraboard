@@ -63,7 +63,7 @@ func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTrigger
 		URL:      iac.Repo.Url,
 		Progress: os.Stdout,
 	})
-	// todo handle commit sha from plan
+
 	if _, err := gitRepo.Branch(iac.Repo.DefaultBranch); err != nil {
 		panic(err)
 	}
@@ -81,12 +81,12 @@ func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTrigger
 		panic(err)
 	}
 
-	tofu, err := iacSvc.NewTofuIacService(tofuFolderPath, true)
+	tofu, err := iacSvc.NewTofuIacService(tofuFolderPath)
 	if err != nil {
 		panic(err)
 	}
 
-	plan, err := tofu.Plan(obj.PlanId, iac.GetEnvs())
+	plan, err := tofu.Plan(obj.PlanId, iac.GetEnvs(), iac.GetVariables())
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		if err = repository.Update(iac); err != nil {
@@ -94,7 +94,7 @@ func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTrigger
 		}
 	}
 	iac.UpdatePlan(obj.PlanId, vo.Succeed)
-	if err = repository.AddPlan(*plan.GetPlan()); err != nil {
+	if err = repository.AddPlan(plan.GetPlan()); err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		if err = repository.Update(iac); err != nil {
 			panic(err)

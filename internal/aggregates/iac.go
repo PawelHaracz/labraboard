@@ -2,6 +2,7 @@ package aggregates
 
 import (
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	vo "labraboard/internal/valueobjects"
 	_ "slices"
@@ -15,11 +16,12 @@ var (
 )
 
 type Iac struct {
-	id      uuid.UUID
-	plans   []*vo.Plans
-	IacType vo.IaCType
-	envs    []vo.IaCEnv
-	Repo    *vo.IaCRepo
+	id        uuid.UUID
+	plans     []*vo.Plans
+	IacType   vo.IaCType
+	envs      []vo.IaCEnv
+	Repo      *vo.IaCRepo
+	variables []vo.IaCVariable
 }
 
 func NewIac(id uuid.UUID, iacType vo.IaCType) (*Iac, error) {
@@ -29,7 +31,7 @@ func NewIac(id uuid.UUID, iacType vo.IaCType) (*Iac, error) {
 	aggregate.envs = []vo.IaCEnv{}
 	aggregate.IacType = iacType
 	aggregate.Repo = nil
-
+	aggregate.variables = []vo.IaCVariable{}
 	return aggregate, nil
 }
 
@@ -94,4 +96,20 @@ func (iac *Iac) GetEnvs() map[string]string {
 		envs[env.Name] = env.Value
 	}
 	return envs
+}
+
+func (iac *Iac) GetVariables() []string {
+	var variables []string
+	for _, variable := range iac.variables {
+		variables = append(variables, fmt.Sprintf("%s=%s", variable.Name, variable.Value))
+	}
+	return variables
+}
+
+func (iac *Iac) SetVariable(name string, value string) error {
+	iac.variables = append(iac.variables, vo.IaCVariable{
+		Name:  name,
+		Value: value,
+	})
+	return nil
 }

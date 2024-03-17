@@ -11,7 +11,7 @@ import (
 // Repository fulfills the IacRepository interface
 type Repository struct {
 	iacs  map[uuid.UUID]*aggregates.Iac
-	plans map[uuid.UUID]aggregates.IacPlan
+	plans map[uuid.UUID]*aggregates.IacPlan
 	sync.Mutex
 }
 
@@ -19,7 +19,7 @@ type Repository struct {
 func NewRepository() (*Repository, error) {
 	return &Repository{
 		iacs:  make(map[uuid.UUID]*aggregates.Iac),
-		plans: make(map[uuid.UUID]aggregates.IacPlan),
+		plans: make(map[uuid.UUID]*aggregates.IacPlan),
 	}, nil
 }
 
@@ -65,18 +65,18 @@ func (mr *Repository) Update(c *aggregates.Iac) error {
 // GetPlan Get finds a customer by ID
 func (mr *Repository) GetPlan(id uuid.UUID) (*aggregates.IacPlan, error) {
 	if plan, ok := mr.plans[id]; ok {
-		return &plan, nil
+		return plan, nil
 	}
 
 	return aggregates.NewIacPlan(id, aggregates.Terraform)
 }
 
 // AddPlan Add will add a new customer to the repositories
-func (mr *Repository) AddPlan(c aggregates.IacPlan) error {
+func (mr *Repository) AddPlan(c *aggregates.IacPlan) error {
 	if mr.plans == nil {
 		// Saftey check if customers is not create, shouldn't happen if using the Factory, but you never know
 		mr.Lock()
-		mr.plans = make(map[uuid.UUID]aggregates.IacPlan)
+		mr.plans = make(map[uuid.UUID]*aggregates.IacPlan)
 		mr.Unlock()
 	}
 	// Make sure Customer isn't already in the repositories
@@ -90,7 +90,7 @@ func (mr *Repository) AddPlan(c aggregates.IacPlan) error {
 }
 
 // UpdatePlan Update will replace an existing customer information with the new customer information
-func (mr *Repository) UpdatePlan(c aggregates.IacPlan) error {
+func (mr *Repository) UpdatePlan(c *aggregates.IacPlan) error {
 	// Make sure Customer is in the repositories
 	if _, ok := mr.plans[c.GetID()]; !ok {
 		return fmt.Errorf("customer does not exist: %w", iac.ErrUpdateIac)

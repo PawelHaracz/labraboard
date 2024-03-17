@@ -20,10 +20,13 @@ func TestPlanTriggerHandler(t *testing.T) {
 	aggregate.AddPlan(planId)
 	aggregate.AddEnv("ARM_TENANT_ID", "4c83ec3e-26b4-444f-afb7-8b171cd1b420", false)
 	aggregate.AddEnv("ARM_CLIENT_ID", "99cc9476-40fd-48b6-813f-e79e0ff830fc", false)
-	aggregate.AddEnv("ARM_CLIENT_SECRET", "fixit", true)
+	aggregate.AddEnv("ARM_CLIENT_SECRET", "CeP8Q~yoYHlWeEw_WkgmH85rHT6ur.7s_UY9JclB", true)
 	aggregate.AddEnv("ARM_SUBSCRIPTION_ID", "cb5863b1-784d-4813-b2c7-e87919081ecb", false)
 
 	aggregate.AddRepo("https://github.com/microsoft/terraform-azure-devops-starter.git", "master", "101-terraform-job/terraform")
+
+	aggregate.SetVariable("environment", "staging")
+	aggregate.SetVariable("location", "Poland Center")
 
 	var obj = &events.PlanTriggered{
 		ProjectId: aggregate.GetID(),
@@ -40,6 +43,7 @@ func TestPlanTriggerHandler(t *testing.T) {
 		t.Errorf("Plan Status not set to Succeed")
 	}
 
-	//todo fix passing backend to plan
+	planAggregate, _ := db.GetPlan(planId)
+	planAggregate.GetChanges()
 
 }
