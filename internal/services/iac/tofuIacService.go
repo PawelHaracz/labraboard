@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	json2 "encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
@@ -29,7 +30,7 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 
 	installer := &releases.ExactVersion{
 		Product: product.Terraform,
-		Version: version.Must(version.NewVersion("1.7.0")),
+		Version: version.Must(version.NewVersion("1.7.5")),
 	}
 
 	execPath, err := installer.Install(context.Background())
@@ -64,12 +65,13 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 
 func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string, variables []string) (*Plan, error) {
 	var b bytes.Buffer
+	var planPath = "plan.tfplan"
 	jsonWriter := bufio.NewWriter(&b)
 	planConfig := []tfexec.PlanOption{
 		tfexec.Lock(true),
 		tfexec.Destroy(false),
 		tfexec.Refresh(false),
-		//tfexec.Out("plan.tfplan"),
+		tfexec.Out(planPath),
 	}
 
 	if len(variables) > 0 {
@@ -95,6 +97,12 @@ func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string, variab
 		return nil, errors.New("plan is not finish well")
 	}
 
+	planJson, err := svc.tf.ShowPlanFile(context.Background(), planPath)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %v", "error running ShowPlanFile", err)
+	}
+
+	jsonPlan, err := json2.Marshal(planJson)
 	if err := jsonWriter.Flush(); err != nil {
 		return nil, errors.New("error running Flush")
 	}
@@ -104,7 +112,7 @@ func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string, variab
 		return nil, errors.New("Cannot reade plan")
 	}
 
-	plan, err := aggregates.NewIacPlan(planId, aggregates.Tofu)
+	plan, err := aggregates.NewIacPlan(planId, aggregates.Tofu, jsonPlan)
 
 	if err != nil {
 		return nil, errors.New("Cannot create aggregate")

@@ -45,5 +45,9 @@ func TestPlanTriggerHandler(t *testing.T) {
 
 	planAggregate, _ := db.GetPlan(planId)
 	planAggregate.GetChanges()
+	planJson := planAggregate.GetPlanJson()
+	if planJson == "" {
+		t.Errorf("Plan Json not set")
+	}
 
 }

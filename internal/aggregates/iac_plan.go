@@ -18,12 +18,14 @@ type IacPlan struct {
 	changeSummary iacPlans.ChangeSummaryIacPlan
 	changes       []iacPlans.ChangesIacPlan
 	planType      IaCPlanType
+	planJson      []byte
 }
 
-func NewIacPlan(id uuid.UUID, planType IaCPlanType) (*IacPlan, error) {
+func NewIacPlan(id uuid.UUID, planType IaCPlanType, plan []byte) (*IacPlan, error) {
 	return &IacPlan{
 		id:       id,
 		planType: planType,
+		planJson: plan,
 	}, nil
 }
 
@@ -75,4 +77,8 @@ func (plan *IacPlan) AddChanges(plans ...entities.IacTerraformPlanJson) {
 
 func (plan *IacPlan) GetChanges() (add int, change int, delete int) {
 	return plan.changeSummary.Add, plan.changeSummary.Change, plan.changeSummary.Remove
+}
+
+func (plan *IacPlan) GetPlanJson() string {
+	return string(plan.planJson)
 }
