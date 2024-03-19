@@ -16,6 +16,39 @@ paths:
       summary: ping example
       tags:
       - example
+  /state/terraform/{projectId}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Get terraform state for a given project
+      tags:
+      - terraform
+      - state
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Update terraform state for a given project
+      tags:
+      - terraform
+      - state
   /terraform/{projectId}/plan:
     get:
       consumes:

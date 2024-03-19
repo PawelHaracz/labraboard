@@ -27,17 +27,25 @@ func InitRouter(publisher eventbus.EventPublisher, repository *memory.Repository
 	}
 
 	tfController, err := api.NewTerraformPlanController(iac)
+	stateController, err := api.NewStateController(iac)
 
 	if err != nil {
 		panic(err)
 	}
 
 	docs.SwaggerInfo.BasePath = "/api/v1"
-	v1 := r.Group("/api/v1")
+	v1 := r.Group(docs.SwaggerInfo.BasePath)
 	{
 		eg := v1.Group("/example")
 		{
 			eg.GET("/helloworld", api.HelloWorld)
+		}
+		state := v1.Group("/state/terraform")
+		{
+			state.GET(":projectId", stateController.GetState)
+			state.POST(":projectId", stateController.UpdateState)
+			state.Handle("LOCK", ":projectId/lock", stateController.Lock)
+			state.Handle("UNLOCK", ":projectId/lock", stateController.Unlock)
 		}
 		tf := v1.Group("/terraform/:projectId/plan/")
 		{

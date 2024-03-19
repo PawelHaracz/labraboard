@@ -38,6 +38,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/state/terraform/{projectId}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "terraform",
+                    "state"
+                ],
+                "summary": "Get terraform state for a given project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "project id",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "terraform",
+                    "state"
+                ],
+                "summary": "Update terraform state for a given project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "project id",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/terraform/{projectId}/plan": {
             "get": {
                 "description": "do ping",
