@@ -2,19 +2,21 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"labraboard/internal/services"
+	"github.com/google/uuid"
+	"io"
+	"labraboard/internal/domains/iac/memory"
+	"net/http"
 )
 
 // https://expeditor.chef.io/docs/getting-started/terraform/
 // https://github.com/platformod/united/blob/main/handlers.go
 type StateController struct {
-	services.IacService
+	*memory.Repository
 }
 
-func NewStateController(iac *services.IacService) (*StateController, error) {
+func NewStateController(repository *memory.Repository) (*StateController, error) {
 	return &StateController{
-		IacService: *iac,
-	}, nil
+		Repository: repository}, nil
 }
 
 // GetState
@@ -29,9 +31,18 @@ func NewStateController(iac *services.IacService) (*StateController, error) {
 // @Produce json
 // @Router /state/terraform/{projectId} [GET]
 func (c *StateController) GetState(context *gin.Context) {
-	//projectId := context.Param("projectId")
-
-	//return state
+	projectId := context.Param("projectId")
+	aggregate, err := c.Repository.GetState(uuid.MustParse(projectId))
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+	state, err := aggregate.GetState()
+	if err != nil {
+		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
+		return
+	}
+	context.JSON(http.StatusOK, state)
 }
 
 // UpdateState
@@ -46,7 +57,18 @@ func (c *StateController) GetState(context *gin.Context) {
 // @Produce json
 // @Router /state/terraform/{projectId} [POST]
 func (c *StateController) UpdateState(context *gin.Context) {
-
+	projectId := context.Param("projectId")
+	aggregate, err := c.Repository.GetState(uuid.MustParse(projectId))
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+	body, _ := io.ReadAll(context.Request.Body)
+	aggregate.SetState(body)
+	if err := c.Repository.AddState(aggregate); err != nil {
+		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
+		return
+	}
 }
 
 // Lock

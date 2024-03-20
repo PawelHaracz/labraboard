@@ -27,7 +27,7 @@ func InitRouter(publisher eventbus.EventPublisher, repository *memory.Repository
 	}
 
 	tfController, err := api.NewTerraformPlanController(iac)
-	stateController, err := api.NewStateController(iac)
+	stateController, err := api.NewStateController(repository)
 
 	if err != nil {
 		panic(err)

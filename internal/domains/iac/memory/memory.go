@@ -13,6 +13,7 @@ type Repository struct {
 	iacs  map[uuid.UUID]*aggregates.Iac
 	plans map[uuid.UUID]*aggregates.IacPlan
 	sync.Mutex
+	states map[uuid.UUID]*aggregates.TerraformState
 }
 
 // NewRepository returns a new Repository
@@ -97,6 +98,31 @@ func (mr *Repository) UpdatePlan(c *aggregates.IacPlan) error {
 	}
 	mr.Lock()
 	mr.plans[c.GetID()] = c
+	mr.Unlock()
+	return nil
+}
+
+func (mr *Repository) GetState(id uuid.UUID) (*aggregates.TerraformState, error) {
+	if state, ok := mr.states[id]; ok {
+		return state, nil
+	}
+
+	return nil, fmt.Errorf("customer does not exist: %w", iac.ErrIacNotFound)
+}
+
+func (mr *Repository) AddState(c *aggregates.TerraformState) error {
+	if mr.states == nil {
+		// Saftey check if customers is not create, shouldn't happen if using the Factory, but you never know
+		mr.Lock()
+		mr.states = make(map[uuid.UUID]*aggregates.TerraformState)
+		mr.Unlock()
+	}
+	// Make sure Customer isn't already in the repositories
+	if _, ok := mr.states[c.GetID()]; ok {
+		return fmt.Errorf("Cannot update the state")
+	}
+	mr.Lock()
+	mr.states[c.GetID()] = c
 	mr.Unlock()
 	return nil
 }
