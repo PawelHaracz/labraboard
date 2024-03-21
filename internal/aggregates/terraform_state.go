@@ -31,9 +31,14 @@ func (s *TerraformState) GetState() (*tfjson.State, error) {
 	return &state, nil
 }
 
-func (s *TerraformState) SetState(state []byte) {
+func (s *TerraformState) GetByteState() []byte {
+	return s.state
+}
+
+func (s *TerraformState) SetState(state *[]byte) {
 	utc := time.Now().UTC()
-	s.state = state
+	s.state = make([]byte, len(*state))
+	copy(s.state, *state)
 	s.ModifyOn = utc
 }
 

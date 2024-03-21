@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"io"
+	"labraboard/internal/aggregates"
 	"labraboard/internal/domains/iac/memory"
 	"net/http"
 )
@@ -37,12 +38,13 @@ func (c *StateController) GetState(context *gin.Context) {
 		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
 		return
 	}
-	state, err := aggregate.GetState()
+	state := aggregate.GetByteState()
 	if err != nil {
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
 		return
 	}
-	context.JSON(http.StatusOK, state)
+	//context.JSON(http.StatusOK, state)
+	context.JSON(http.StatusOK, gin.H{"Data": state, "Locked": false})
 }
 
 // UpdateState
@@ -60,12 +62,22 @@ func (c *StateController) UpdateState(context *gin.Context) {
 	projectId := context.Param("projectId")
 	aggregate, err := c.Repository.GetState(uuid.MustParse(projectId))
 	if err != nil {
-		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
-		return
+		aggregate, err = aggregates.NewTerraformState(uuid.MustParse(projectId), make([]byte, 0))
+		if err != nil {
+			context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
+			return
+		}
+		err = c.Repository.AddState(aggregate)
+		if err != nil {
+			context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
+			return
+		}
 	}
 	body, _ := io.ReadAll(context.Request.Body)
-	aggregate.SetState(body)
-	if err := c.Repository.AddState(aggregate); err != nil {
+
+	aggregate.SetState(&body)
+	err = c.Repository.UpdateState(aggregate)
+	if err != nil {
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
 		return
 	}

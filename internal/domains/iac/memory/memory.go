@@ -19,8 +19,9 @@ type Repository struct {
 // NewRepository returns a new Repository
 func NewRepository() (*Repository, error) {
 	return &Repository{
-		iacs:  make(map[uuid.UUID]*aggregates.Iac),
-		plans: make(map[uuid.UUID]*aggregates.IacPlan),
+		iacs:   make(map[uuid.UUID]*aggregates.Iac),
+		plans:  make(map[uuid.UUID]*aggregates.IacPlan),
+		states: make(map[uuid.UUID]*aggregates.TerraformState),
 	}, nil
 }
 
@@ -119,6 +120,17 @@ func (mr *Repository) AddState(c *aggregates.TerraformState) error {
 	}
 	// Make sure Customer isn't already in the repositories
 	if _, ok := mr.states[c.GetID()]; ok {
+		return fmt.Errorf("Cannot update the state")
+	}
+	mr.Lock()
+	mr.states[c.GetID()] = c
+	mr.Unlock()
+	return nil
+}
+
+func (mr *Repository) UpdateState(c *aggregates.TerraformState) error {
+	// Make sure Customer isn't already in the repositories
+	if _, ok := mr.states[c.GetID()]; !ok {
 		return fmt.Errorf("Cannot update the state")
 	}
 	mr.Lock()
