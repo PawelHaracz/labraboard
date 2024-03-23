@@ -18,6 +18,7 @@ func InitRouter(publisher eventbus.EventPublisher, repository *memory.Repository
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.Use(gzip.Gzip(gzip.BestSpeed))
+	r.Use(UnitedSetup())
 
 	iac, err := services.NewIacService(
 		services.WithEventBus(publisher),

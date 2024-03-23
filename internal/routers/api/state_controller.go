@@ -10,12 +10,6 @@ import (
 	"net/http"
 )
 
-type payload struct {
-	Data    []byte
-	MD5     []byte
-	Version int `json:"version"`
-}
-
 // https://expeditor.chef.io/docs/getting-started/terraform/
 // https://github.com/platformod/united/blob/main/handlers.go
 type StateController struct {
@@ -56,23 +50,12 @@ func (c *StateController) GetState(context *gin.Context) {
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
 		return
 	}
-	//p.Data = state
-	//if raw := context.Request.Header.Get("Content-MD5"); raw != "" {
-	//	md5, err := base64.StdEncoding.DecodeString(raw)
-	//	if err != nil {
-	//		context.Error(fmt.Errorf("Failed to decode Content-MD5 '%s': %s", raw, err))
-	//	}
-	//
-	//	p.MD5 = md5
-	//} else {
-	//	// Generate the MD5
-	//	hash := md5.Sum(p.Data)
-	//	p.MD5 = hash[:]
-	//}
-	//p.Version = 4
+	if state == nil {
+		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
 	context.JSON(http.StatusOK, state)
 	return
-	//context.Writer.Write(stateBytes)
 }
 
 // UpdateState
@@ -130,7 +113,41 @@ func (c *StateController) UpdateState(context *gin.Context) {
 // @Produce json
 // @Success 200
 func (c *StateController) Lock(context *gin.Context) {
+	projectId := context.Param("projectId")
+	var reqLock aggregates.LockInfo
+	_ = context.BindJSON(&reqLock)
+	aggregate, err := c.Repository.GetState(uuid.MustParse(projectId))
+	if err != nil {
+		aggregate, err = aggregates.NewTerraformState(uuid.MustParse(projectId), make([]byte, 0))
+		if err != nil {
+			context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
+			return
+		}
+		err = c.Repository.AddState(aggregate)
+		if err != nil {
+			context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
+			return
+		}
+	}
+	storedLock, err := aggregate.GetLockInfo()
+	if err != nil {
+		context.JSON(http.StatusLocked, gin.H{"message": "Already Locked"})
+		return
+	}
+	if storedLock != nil {
+		context.JSON(http.StatusLocked, gin.H{"message": "Already Locked", "ID": storedLock.ID})
+		return
+	}
+	//todo handle lock time
+	if err := aggregate.SetLockInfo(&reqLock); err != nil {
+		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
+		return
+	}
+	context.JSON(http.StatusOK, reqLock.ID)
+	return
 
+	//
+	//rc := c.MustGet("rc").(*redis.Client)
 }
 
 // Unlock
@@ -145,5 +162,20 @@ func (c *StateController) Lock(context *gin.Context) {
 // @Produce json
 // @Success 200
 func (c *StateController) Unlock(context *gin.Context) {
+	projectId := context.Param("projectId")
+	var reqLock aggregates.LockInfo
+	_ = context.BindJSON(&reqLock)
+	aggregate, err := c.Repository.GetState(uuid.MustParse(projectId))
+	if err != nil {
+		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
+		return
+	}
 
+	err = aggregate.LeaseLock(&reqLock)
+
+	if err != nil {
+		context.JSON(http.StatusServiceUnavailable, gin.H{"message": err.Error()})
+	} else {
+		context.JSON(http.StatusOK, gin.H{"message": "ok"})
+	}
 }
