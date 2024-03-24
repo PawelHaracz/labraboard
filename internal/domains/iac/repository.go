@@ -16,8 +16,8 @@ var (
 	ErrUpdateIac = errors.New("failed to update the IaC in the repositories")
 )
 
-type Repository interface {
-	Get(uuid.UUID) (*aggregates.Iac, error)
-	Add(*aggregates.Iac) error
-	Update(*aggregates.Iac) error
+type Repository[T aggregates.Aggregate] interface {
+	Get(uuid.UUID) (*T, error)
+	Add(*T) error
+	Update(*T) error
 }

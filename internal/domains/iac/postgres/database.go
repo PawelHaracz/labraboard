@@ -1,9 +1,11 @@
 package postgres
 
 import (
+	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"labraboard/internal/domains/iac/postgres/models"
 )
 
 type Database struct {
@@ -41,4 +43,11 @@ func (db *Database) Close() error {
 		return err
 	}
 	return nil
+}
+
+func (db *Database) Migrate() {
+	err := db.GormDB.AutoMigrate(&models.TerraformStateDb{})
+	if err != nil {
+		panic(errors.Wrap(err, "failed to migrate"))
+	}
 }

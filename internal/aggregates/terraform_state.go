@@ -46,12 +46,12 @@ type LockInfo struct {
 	Who string `json:"Who"`
 }
 
-func NewTerraformState(projectId uuid.UUID, state []byte) (*TerraformState, error) {
-	utc := time.Now().UTC()
+func NewTerraformState(projectId uuid.UUID, state []byte, on time.Time, modifyOn time.Time, lock []byte) (*TerraformState, error) {
 	return &TerraformState{projectId: projectId,
 		state:     state,
-		CreatedOn: utc,
-		ModifyOn:  utc,
+		CreatedOn: on,
+		ModifyOn:  modifyOn,
+		lock:      lock,
 	}, nil
 }
 
@@ -66,6 +66,9 @@ func (s *TerraformState) GetState() (*tfjson.State, error) {
 
 func (s *TerraformState) GetByteState() []byte {
 	return s.state
+}
+func (s *TerraformState) GetByteLock() []byte {
+	return s.lock
 }
 
 func (s *TerraformState) SetState(state *[]byte) {

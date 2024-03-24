@@ -8,6 +8,7 @@ import (
 	"labraboard/internal/domains/iac/memory"
 	"log"
 	"net/http"
+	"time"
 )
 
 // https://expeditor.chef.io/docs/getting-started/terraform/
@@ -44,8 +45,8 @@ func (c *StateController) GetState(context *gin.Context) {
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
 		return
 	}
-	state, err := aggregate.Deserialize()
 
+	state, err := aggregate.Deserialize()
 	if err != nil {
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
 		return
@@ -54,6 +55,7 @@ func (c *StateController) GetState(context *gin.Context) {
 		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
 		return
 	}
+
 	context.JSON(http.StatusOK, state)
 	return
 }
@@ -72,10 +74,12 @@ func (c *StateController) GetState(context *gin.Context) {
 func (c *StateController) UpdateState(context *gin.Context) {
 	ref := context.Query("ref")
 	log.Default().Printf("ref: %s", ref)
+	id := context.Query("ID")
 	projectId := context.Param("projectId")
 	aggregate, err := c.Repository.GetState(uuid.MustParse(projectId))
 	if err != nil {
-		aggregate, err = aggregates.NewTerraformState(uuid.MustParse(projectId), make([]byte, 0))
+		utc := time.Now().UTC()
+		aggregate, err = aggregates.NewTerraformState(uuid.MustParse(projectId), make([]byte, 0), utc, utc, make([]byte, 0))
 		if err != nil {
 			context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
 			return
@@ -85,6 +89,11 @@ func (c *StateController) UpdateState(context *gin.Context) {
 			context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
 			return
 		}
+	}
+	storedLock, err := aggregate.GetLockInfo()
+	if id != "" && storedLock.ID != id {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Locked by different ID", "ID": storedLock.ID})
+		return
 	}
 	var state map[string]interface{}
 	if err := json.NewDecoder(context.Request.Body).Decode(&state); err != nil {
@@ -114,11 +123,13 @@ func (c *StateController) UpdateState(context *gin.Context) {
 // @Success 200
 func (c *StateController) Lock(context *gin.Context) {
 	projectId := context.Param("projectId")
+
 	var reqLock aggregates.LockInfo
 	_ = context.BindJSON(&reqLock)
 	aggregate, err := c.Repository.GetState(uuid.MustParse(projectId))
 	if err != nil {
-		aggregate, err = aggregates.NewTerraformState(uuid.MustParse(projectId), make([]byte, 0))
+		utc := time.Now().UTC()
+		aggregate, err = aggregates.NewTerraformState(uuid.MustParse(projectId), make([]byte, 0), utc, utc, make([]byte, 0))
 		if err != nil {
 			context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
 			return
@@ -129,6 +140,13 @@ func (c *StateController) Lock(context *gin.Context) {
 			return
 		}
 	}
+
+	if err != nil {
+		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
+		return
+
+	}
+
 	storedLock, err := aggregate.GetLockInfo()
 	if err != nil {
 		context.JSON(http.StatusLocked, gin.H{"message": "Already Locked"})
