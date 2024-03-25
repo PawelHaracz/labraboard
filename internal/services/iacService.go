@@ -3,16 +3,17 @@ package services
 import (
 	"errors"
 	"github.com/google/uuid"
-	"labraboard/internal/domains/iac"
+	"labraboard/internal/aggregates"
 	"labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
+	"labraboard/internal/repositories"
 )
 
 type IacConfiguration func(os *IacService) error
 
 type IacService struct {
 	publisher  eventbus.EventPublisher
-	repository iac.Repository
+	repository repositories.Repository[*aggregates.Iac]
 }
 
 func NewIacService(configs ...IacConfiguration) (*IacService, error) {
@@ -40,7 +41,7 @@ func WithEventBus(eb eventbus.EventPublisher) IacConfiguration {
 	}
 }
 
-func WithRepository(r iac.Repository) IacConfiguration {
+func WithRepository(r repositories.Repository[*aggregates.Iac]) IacConfiguration {
 	return func(is *IacService) error {
 		is.repository = r
 		return nil

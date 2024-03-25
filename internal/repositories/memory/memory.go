@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
-	"labraboard/internal/domains/iac"
+	"labraboard/internal/repositories"
 	"sync"
 )
 
@@ -31,7 +31,7 @@ func (mr *Repository) Get(id uuid.UUID) (*aggregates.Iac, error) {
 		return iac, nil
 	}
 
-	return nil, fmt.Errorf("customer does not exist: %w", iac.ErrIacNotFound)
+	return nil, fmt.Errorf("customer does not exist: %w", repositories.ErrIacNotFound)
 }
 
 // Add will add a new customer to the repositories
@@ -44,7 +44,7 @@ func (mr *Repository) Add(c *aggregates.Iac) error {
 	}
 	// Make sure Customer isn't already in the repositories
 	if _, ok := mr.iacs[c.GetID()]; ok {
-		return fmt.Errorf("customer already exists: %w", iac.ErrFailedToAddIac)
+		return fmt.Errorf("customer already exists: %w", repositories.ErrFailedToAddIac)
 	}
 	mr.Lock()
 	mr.iacs[c.GetID()] = c
@@ -56,7 +56,7 @@ func (mr *Repository) Add(c *aggregates.Iac) error {
 func (mr *Repository) Update(c *aggregates.Iac) error {
 	// Make sure Customer is in the repositories
 	if _, ok := mr.iacs[c.GetID()]; !ok {
-		return fmt.Errorf("customer does not exist: %w", iac.ErrUpdateIac)
+		return fmt.Errorf("customer does not exist: %w", repositories.ErrUpdateIac)
 	}
 	mr.Lock()
 	mr.iacs[c.GetID()] = c
@@ -83,7 +83,7 @@ func (mr *Repository) AddPlan(c *aggregates.IacPlan) error {
 	}
 	// Make sure Customer isn't already in the repositories
 	if _, ok := mr.plans[c.GetID()]; ok {
-		return fmt.Errorf("customer already exists: %w", iac.ErrFailedToAddIac)
+		return fmt.Errorf("customer already exists: %w", repositories.ErrFailedToAddIac)
 	}
 	mr.Lock()
 	mr.plans[c.GetID()] = c
@@ -95,7 +95,7 @@ func (mr *Repository) AddPlan(c *aggregates.IacPlan) error {
 func (mr *Repository) UpdatePlan(c *aggregates.IacPlan) error {
 	// Make sure Customer is in the repositories
 	if _, ok := mr.plans[c.GetID()]; !ok {
-		return fmt.Errorf("customer does not exist: %w", iac.ErrUpdateIac)
+		return fmt.Errorf("customer does not exist: %w", repositories.ErrUpdateIac)
 	}
 	mr.Lock()
 	mr.plans[c.GetID()] = c
@@ -108,7 +108,7 @@ func (mr *Repository) GetState(id uuid.UUID) (*aggregates.TerraformState, error)
 		return state, nil
 	}
 
-	return nil, fmt.Errorf("customer does not exist: %w", iac.ErrIacNotFound)
+	return nil, fmt.Errorf("customer does not exist: %w", repositories.ErrIacNotFound)
 }
 
 func (mr *Repository) AddState(c *aggregates.TerraformState) error {

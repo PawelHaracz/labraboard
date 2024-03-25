@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/go-git/go-git/v5"
-	dbmemory "labraboard/internal/domains/iac/memory"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
+	dbmemory "labraboard/internal/repositories/memory"
 	iacSvc "labraboard/internal/services/iac"
 	vo "labraboard/internal/valueobjects"
 	"os"

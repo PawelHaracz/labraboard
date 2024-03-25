@@ -6,8 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ilyakaznacheev/cleanenv"
 	"labraboard"
-	dbmemory "labraboard/internal/domains/iac/memory"
 	ebmemory "labraboard/internal/eventbus/memory"
+	dbmemory "labraboard/internal/repositories/memory"
+	"labraboard/internal/repositories/postgres"
 	"labraboard/internal/routers"
 	"runtime"
 )
@@ -33,20 +34,20 @@ func main() {
 	}
 	ConfigRuntime()
 	gin.SetMode(gin.ReleaseMode)
-	//db := postgres.NewDatabase(cfg.ConnectionString)
-	//defer func(db *postgres.Database) {
-	//	err := db.Close()
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//}(db)
-	//todo add repository for postgresql
+	db := postgres.NewDatabase(cfg.ConnectionString)
+	defer func(db *postgres.Database) {
+		err := db.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(db)
+	db.Migrate()
 	repository, err := dbmemory.NewRepository()
 	if err != nil {
 		panic(err)
 	}
 	go ConfigureWorkers(repository)
-	routersInit := routers.InitRouter(eventBus.EventPublisher, repository)
+	routersInit := routers.InitRouter(eventBus.EventPublisher, repository, db)
 	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
 		panic(err)

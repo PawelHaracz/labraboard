@@ -3,7 +3,7 @@ package services
 import (
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
-	"labraboard/internal/domains/iac/memory"
+	"labraboard/internal/repositories/memory"
 	"labraboard/internal/valueobjects"
 	"testing"
 )

@@ -16,14 +16,15 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Override backend
 - [X] Use custom Env and variables on to terraform
 - [X] Http Backend (Get Put)
-- [X] Handle Locks on the state
-- [ ] Add postgresql as backend
-- [ ] Time Lease for the state
+- [X] Handle Locks on the state Time Lease for the state
 - [ ] Handle Destroy
+- [ ] Add postgresql as backend
+- [ ]
 - [ ] Handle scheduled plan in TerraformPlanner
 - [ ] Access Token for Backend http
 - [ ] Run plan using http backend
 - [ ] Integrate plan with terraform plan association
+- [ ] Clean solution to more DDD
 - [ ] Handle other version than version 4.0 of tf
 - [ ] Apply Mechanism to handle the state
 - [ ] Integrate with the Git

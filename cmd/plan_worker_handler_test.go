@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
-	dbmemory "labraboard/internal/domains/iac/memory"
 	"labraboard/internal/eventbus/events"
+	dbmemory "labraboard/internal/repositories/memory"
 	vo "labraboard/internal/valueobjects"
 	"testing"
 )
@@ -12,7 +12,7 @@ import (
 func TestPlanTriggerHandler(t *testing.T) {
 	db, _ := dbmemory.NewRepository()
 
-	aggregate, _ := aggregates.NewIac(uuid.New(), vo.Terraform)
+	aggregate, _ := aggregates.NewIac(uuid.New(), vo.Terraform, nil, nil, vo.IaCRepo{}, nil)
 	if err := db.Add(aggregate); err != nil {
 		t.Failed()
 	}

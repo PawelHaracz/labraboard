@@ -5,7 +5,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"labraboard/internal/domains/iac/postgres/models"
+	"labraboard/internal/repositories/postgres/models"
 )
 
 type Database struct {
@@ -47,6 +47,10 @@ func (db *Database) Close() error {
 
 func (db *Database) Migrate() {
 	err := db.GormDB.AutoMigrate(&models.TerraformStateDb{})
+	if err != nil {
+		panic(errors.Wrap(err, "failed to migrate"))
+	}
+	err = db.GormDB.AutoMigrate(&models.IaCDb{})
 	if err != nil {
 		panic(errors.Wrap(err, "failed to migrate"))
 	}

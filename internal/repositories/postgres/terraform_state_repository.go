@@ -4,16 +4,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
-	"labraboard/internal/domains/iac/postgres/models"
+	"labraboard/internal/repositories/postgres/models"
 )
 
 type TerraformStateRepository struct {
-	database Database
+	database *Database
 }
 
 func NewTerraformStateRepository(database *Database) (*TerraformStateRepository, error) {
 	return &TerraformStateRepository{
-		database: *database,
+		database: database,
 	}, nil
 }
 
@@ -22,18 +22,18 @@ func (repo *TerraformStateRepository) Get(id uuid.UUID) (*aggregates.TerraformSt
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get state")
 	}
-	return aggregates.NewTerraformState(state.ProjectId, state.State, state.CreatedOn, state.ModifyOn, state.Lock)
+	return aggregates.NewTerraformState(state.ID, state.State, state.CreatedOn, state.ModifyOn, state.Lock)
 }
 
 func (repo *TerraformStateRepository) Add(state *aggregates.TerraformState) error {
-	repo.database.GormDB.Create(&models.TerraformStateDb{
-		ProjectId: state.GetID(),
+	result := repo.database.GormDB.Create(&models.TerraformStateDb{
+		ID:        state.GetID(),
 		State:     state.GetByteState(),
 		CreatedOn: state.CreatedOn,
 		ModifyOn:  state.ModifyOn,
 		Lock:      state.GetByteLock(),
 	})
-	return nil
+	return result.Error
 }
 
 func (repo *TerraformStateRepository) Update(state *aggregates.TerraformState) error {
@@ -41,16 +41,19 @@ func (repo *TerraformStateRepository) Update(state *aggregates.TerraformState) e
 	if err != nil {
 		return errors.Wrap(err, "can't get state")
 	}
-	repo.database.GormDB.Model(&s).Updates(&models.TerraformStateDb{
-		State:    state.GetByteState(),
-		ModifyOn: state.ModifyOn,
-		Lock:     state.GetByteLock(),
-	})
-	return nil
+
+	s.State = state.GetByteState()
+	s.ModifyOn = state.ModifyOn
+	s.Lock = state.GetByteLock()
+	result := repo.database.GormDB.Save(&s)
+	return result.Error
 }
 
 func (repo *TerraformStateRepository) getState(id uuid.UUID) (*models.TerraformStateDb, error) {
 	var state models.TerraformStateDb
-	repo.database.GormDB.First(&state, "project_id =?", id)
+	result := repo.database.GormDB.First(&state, "id =?", id)
+	if result.Error != nil {
+		return nil, errors.Wrap(result.Error, "can't get state")
+	}
 	return &state, nil
 }

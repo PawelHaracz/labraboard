@@ -6,19 +6,20 @@ import (
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"labraboard/docs"
-	"labraboard/internal/domains/iac/memory"
 	"labraboard/internal/eventbus"
+	"labraboard/internal/repositories/memory"
+	"labraboard/internal/repositories/postgres"
 	api "labraboard/internal/routers/api"
 	"labraboard/internal/services"
 )
 
-func InitRouter(publisher eventbus.EventPublisher, repository *memory.Repository) *gin.Engine {
+func InitRouter(publisher eventbus.EventPublisher, repository *memory.Repository, database *postgres.Database) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.Use(gzip.Gzip(gzip.BestSpeed))
-	r.Use(UnitedSetup())
+	r.Use(UnitedSetup(database))
 
 	iac, err := services.NewIacService(
 		services.WithEventBus(publisher),
@@ -28,7 +29,7 @@ func InitRouter(publisher eventbus.EventPublisher, repository *memory.Repository
 	}
 
 	tfController, err := api.NewTerraformPlanController(iac)
-	stateController, err := api.NewStateController(repository)
+	stateController, err := api.NewStateController()
 
 	if err != nil {
 		panic(err)

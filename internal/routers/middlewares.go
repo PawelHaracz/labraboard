@@ -1,13 +1,22 @@
 package routers
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"labraboard/internal/helpers"
+	"labraboard/internal/repositories"
+	"labraboard/internal/repositories/postgres"
+)
 
-func UnitedSetup() gin.HandlerFunc {
-	//s3c, _ := newS3Client(cfg.KeyArn)
-	//rc := newRedisClient(cfg.RedisConn)
+func UnitedSetup(db *postgres.Database) gin.HandlerFunc {
+	uow, err := repositories.NewUnitOfWork(
+		repositories.WithIaCRepositoryDbRepository(db),
+		repositories.WithTerraformStateDbRepository(db))
+	if err != nil {
+		panic(err)
+	}
 
 	return func(c *gin.Context) {
-		//c.Set("s3c", s3c)
+		c.Set(string(helpers.UnitOfWorkSetup), uow)
 		//c.Set("rc", rc)
 		//c.Set("prefix", cfg.BucketPrefix)
 	}

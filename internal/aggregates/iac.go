@@ -1,9 +1,11 @@
 package aggregates
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"labraboard/internal/repositories/postgres/models"
 	vo "labraboard/internal/valueobjects"
 	_ "slices"
 	"time"
@@ -19,19 +21,19 @@ type Iac struct {
 	id        uuid.UUID
 	plans     []*vo.Plans
 	IacType   vo.IaCType
-	envs      []vo.IaCEnv
+	envs      []*vo.IaCEnv
 	Repo      *vo.IaCRepo
-	variables []vo.IaCVariable
+	variables []*vo.IaCVariable
 }
 
-func NewIac(id uuid.UUID, iacType vo.IaCType) (*Iac, error) {
+func NewIac(id uuid.UUID, iacType vo.IaCType, plans []*vo.Plans, envs []*vo.IaCEnv, repo vo.IaCRepo, variables []*vo.IaCVariable) (*Iac, error) {
 	aggregate := &Iac{}
 	aggregate.id = id
-	aggregate.plans = nil
-	aggregate.envs = []vo.IaCEnv{}
+	aggregate.plans = plans
+	aggregate.envs = envs
 	aggregate.IacType = iacType
-	aggregate.Repo = nil
-	aggregate.variables = []vo.IaCVariable{}
+	aggregate.Repo = &repo
+	aggregate.variables = variables
 	return aggregate, nil
 }
 
@@ -41,7 +43,7 @@ func (c *Iac) AddEnv(name string, value string, hasSecret bool) error {
 			return ErrEnvAlreadyExists
 		}
 	}
-	c.envs = append(c.envs, vo.IaCEnv{
+	c.envs = append(c.envs, &vo.IaCEnv{
 		Name:      name,
 		Value:     value,
 		HasSecret: hasSecret,
@@ -107,9 +109,41 @@ func (iac *Iac) GetVariables() []string {
 }
 
 func (iac *Iac) SetVariable(name string, value string) error {
-	iac.variables = append(iac.variables, vo.IaCVariable{
+	iac.variables = append(iac.variables, &vo.IaCVariable{
 		Name:  name,
 		Value: value,
 	})
 	return nil
+}
+
+func (iac *Iac) Map() (*models.IaCDb, error) {
+	iacRepo, err := json.Marshal(iac.Repo)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "can't create repo on iac")
+	}
+
+	envs, err := json.Marshal(iac.envs)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't create envs on iac")
+	}
+
+	variables, err := json.Marshal(iac.variables)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't create variables on iac")
+	}
+
+	plans, err := json.Marshal(iac.plans)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't create plans on iac")
+	}
+
+	return &models.IaCDb{
+		ID:        iac.id,
+		IacType:   int(iac.IacType),
+		Repo:      iacRepo,
+		Envs:      envs,
+		Variables: variables,
+		Plans:     plans,
+	}, nil
 }

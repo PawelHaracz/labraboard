@@ -1,4 +1,4 @@
-package iac
+package repositories
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ var (
 )
 
 type Repository[T aggregates.Aggregate] interface {
-	Get(uuid.UUID) (*T, error)
-	Add(*T) error
-	Update(*T) error
+	Get(uuid.UUID) (T, error)
+	Add(T) error
+	Update(T) error
 }
