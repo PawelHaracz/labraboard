@@ -112,7 +112,7 @@ func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string, variab
 		return nil, errors.New("Cannot reade plan")
 	}
 
-	plan, err := aggregates.NewIacPlan(planId, aggregates.Tofu, jsonPlan)
+	plan, err := aggregates.NewIacPlan(planId, aggregates.Tofu, jsonPlan, nil, nil)
 
 	if err != nil {
 		return nil, errors.New("Cannot create aggregate")

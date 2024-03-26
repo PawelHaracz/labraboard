@@ -70,7 +70,7 @@ func (mr *Repository) GetPlan(id uuid.UUID) (*aggregates.IacPlan, error) {
 		return plan, nil
 	}
 
-	return aggregates.NewIacPlan(id, aggregates.Terraform, nil)
+	return aggregates.NewIacPlan(id, aggregates.Terraform, nil, nil, nil)
 }
 
 // AddPlan Add will add a new customer to the repositories

@@ -46,11 +46,10 @@ func (db *Database) Close() error {
 }
 
 func (db *Database) Migrate() {
-	err := db.GormDB.AutoMigrate(&models.TerraformStateDb{})
-	if err != nil {
-		panic(errors.Wrap(err, "failed to migrate"))
-	}
-	err = db.GormDB.AutoMigrate(&models.IaCDb{})
+	err := db.GormDB.AutoMigrate(
+		&models.TerraformStateDb{},
+		&models.IaCDb{},
+		&models.IaCPlanDb{})
 	if err != nil {
 		panic(errors.Wrap(err, "failed to migrate"))
 	}

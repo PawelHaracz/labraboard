@@ -10,7 +10,9 @@ import (
 func UnitedSetup(db *postgres.Database) gin.HandlerFunc {
 	uow, err := repositories.NewUnitOfWork(
 		repositories.WithIaCRepositoryDbRepository(db),
-		repositories.WithTerraformStateDbRepository(db))
+		repositories.WithTerraformStateDbRepository(db),
+		repositories.WithIacPlanRepositoryDbRepository(db),
+	)
 	if err != nil {
 		panic(err)
 	}

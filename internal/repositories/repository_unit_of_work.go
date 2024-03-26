@@ -29,9 +29,9 @@ func NewUnitOfWork(configs ...UnitOfWorkConfiguration) (*UnitOfWork, error) {
 		return nil, errors.New("iac Repository is not set")
 	}
 
-	//if uow.IacPlan == nil {
-	//	return nil, errors.New("iac plan Repository is not set")
-	//}
+	if uow.IacPlan == nil {
+		return nil, errors.New("iac plan Repository is not set")
+	}
 	return uow, nil
 }
 
@@ -62,16 +62,16 @@ func WithIaCRepositoryDbRepository(database *db.Database) UnitOfWorkConfiguratio
 	}
 }
 
-//func WithIacPlanRepositoryDbRepository() UnitOfWorkConfiguration {
-//	repository, err := db.NewTerraformStateRepository(database)
-//	if err != nil {
-//		return func(uow *UnitOfWork) error {
-//			return errors.Wrap(err, "can't create terraform state repository")
-//		}
-//	}
-//
-//	return func(uow *UnitOfWork) error {
-//		uow.terraformStateDbRepository = repository
-//		return nil
-//	}
-//}
+func WithIacPlanRepositoryDbRepository(database *db.Database) UnitOfWorkConfiguration {
+	repository, err := db.NewIaCPlanRepository(database)
+	if err != nil {
+		return func(uow *UnitOfWork) error {
+			return errors.Wrap(err, "can't create terraform state repository")
+		}
+	}
+
+	return func(uow *UnitOfWork) error {
+		uow.IacPlan = repository
+		return nil
+	}
+}

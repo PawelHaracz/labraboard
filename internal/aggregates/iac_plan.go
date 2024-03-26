@@ -1,8 +1,11 @@
 package aggregates
 
 import (
+	"encoding/json"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"labraboard/internal/entities"
+	"labraboard/internal/repositories/postgres/models"
 	"labraboard/internal/valueobjects/iacPlans"
 )
 
@@ -15,17 +18,19 @@ var (
 
 type IacPlan struct {
 	id            uuid.UUID
-	changeSummary iacPlans.ChangeSummaryIacPlan
+	changeSummary *iacPlans.ChangeSummaryIacPlan
 	changes       []iacPlans.ChangesIacPlan
 	planType      IaCPlanType
 	planJson      []byte
 }
 
-func NewIacPlan(id uuid.UUID, planType IaCPlanType, plan []byte) (*IacPlan, error) {
+func NewIacPlan(id uuid.UUID, planType IaCPlanType, plan []byte, summary *iacPlans.ChangeSummaryIacPlan, changes []iacPlans.ChangesIacPlan) (*IacPlan, error) {
 	return &IacPlan{
-		id:       id,
-		planType: planType,
-		planJson: plan,
+		id:            id,
+		planType:      planType,
+		planJson:      plan,
+		changeSummary: summary,
+		changes:       changes,
 	}, nil
 }
 
@@ -63,7 +68,7 @@ func (plan *IacPlan) AddChanges(plans ...entities.IacTerraformPlanJson) {
 				continue
 			}
 			summary := newChangeSummaryIacPlan(p.SummaryChanges.Add, p.SummaryChanges.Change, p.SummaryChanges.Remove)
-			plan.changeSummary = *summary
+			plan.changeSummary = summary
 
 		} else {
 			planner := newChangeIacPlanner(p.Change.Resource.ResourceType, p.Change.Resource.ResourceName, p.Change.Resource.Provider, iacPlans.PlanTypeAction(p.Change.Action))
@@ -81,4 +86,24 @@ func (plan *IacPlan) GetChanges() (add int, change int, delete int) {
 
 func (plan *IacPlan) GetPlanJson() string {
 	return string(plan.planJson)
+}
+
+func (plan *IacPlan) Map() (*models.IaCPlanDb, error) {
+	changes, err := json.Marshal(plan.changes)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't marshall changes on iac")
+	}
+
+	summary, err := json.Marshal(plan.changeSummary)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't marshall changes on iac")
+	}
+
+	return &models.IaCPlanDb{
+		ID:            plan.id,
+		ChangeSummary: summary,
+		Changes:       changes,
+		PlanJson:      plan.planJson,
+		PlanType:      string(plan.planType),
+	}, nil
 }
