@@ -32,7 +32,7 @@ func TestNewIacService(t *testing.T) {
 		t.Errorf("error: %v", "IacService.repositories is nil")
 	}
 
-	aggregate, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform)
+	aggregate, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform, make([]*valueobjects.Plans, 0), make([]*valueobjects.IaCEnv, 0), valueobjects.IaCRepo{}, make([]*valueobjects.IaCVariable, 0))
 	err = is.repository.Add(aggregate)
 
 	if err != nil {
