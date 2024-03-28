@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
@@ -25,7 +26,7 @@ func NewIacService(configs ...IacConfiguration) (*IacService, error) {
 	}
 
 	if is.publisher == nil {
-		return nil, errors.New("planner is not set")
+		return nil, errors.New("publisher is not set")
 	}
 	if is.repository == nil {
 		return nil, errors.New("repositories is not set")
@@ -66,7 +67,7 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) 
 		ProjectId: projectId,
 		PlanId:    planId}
 
-	svc.publisher.Publish(eventbus.TRIGGERED_PLAN, event)
+	svc.publisher.Publish(eventbus.TRIGGERED_PLAN, event, context.Background())
 	if err != nil {
 		return uuid.Nil, err
 	}

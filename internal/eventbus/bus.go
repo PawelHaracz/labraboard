@@ -1,12 +1,14 @@
 package eventbus
 
+import "context"
+
 type EventPublisher interface {
-	Publish(key EventName, event interface{})
+	Publish(key EventName, event interface{}, ctx context.Context)
 }
 
 type EventSubscriber interface {
-	Subscribe(key EventName) chan interface{}
-	Unsubscribe(key EventName, ch chan interface{})
+	Subscribe(key EventName, ctx context.Context) chan interface{}
+	Unsubscribe(key EventName, ch chan interface{}, ctx context.Context)
 }
 
 type Bus struct {

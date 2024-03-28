@@ -1,20 +1,17 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ilyakaznacheev/cleanenv"
 	"labraboard"
-	ebmemory "labraboard/internal/eventbus/memory"
+	"labraboard/internal/eventbus/redis"
 	dbmemory "labraboard/internal/repositories/memory"
 	"labraboard/internal/repositories/postgres"
 	"labraboard/internal/routers"
 	"runtime"
-)
-
-var (
-	eventBus = ebmemory.NewMemoryEventBus()
 )
 
 func main() {
@@ -47,7 +44,9 @@ func main() {
 		panic(err)
 	}
 	go ConfigureWorkers(repository)
-	routersInit := routers.InitRouter(eventBus.EventPublisher, repository, db)
+
+	eventBus := redis.NewRedisEventBus(cfg.RedisHost, cfg.RedisPort, cfg.RedisPassword, cfg.RedisDB, context.Background())
+	routersInit := routers.InitRouter(eventBus, repository, db)
 	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
 		panic(err)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-git/go-git/v5"
 	eb "labraboard/internal/eventbus"
@@ -11,8 +12,8 @@ import (
 	"os"
 )
 
-func handlePlan(repository *dbmemory.Repository) {
-	pl := eventBus.Subscribe(eb.TRIGGERED_PLAN)
+func handlePlan(eventSubscriber eb.EventSubscriber, repository *dbmemory.Repository) {
+	pl := eventSubscriber.Subscribe(eb.TRIGGERED_PLAN, context.Background())
 	go func(repository *dbmemory.Repository) {
 		for msg := range pl {
 			switch obj := msg.(type) {

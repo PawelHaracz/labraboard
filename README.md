@@ -19,6 +19,7 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Handle Locks on the state 
 - [X] Handle Destroy
 - [ ] Add postgresql as backend
+- [ ] Redis queue
 - [ ] Time Lease for the state
 - [ ] Handle scheduled plan in TerraformPlanner
 - [ ] Access Token for Backend http

@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"context"
 	eb "labraboard/internal/eventbus"
 	"sync"
 )
@@ -10,7 +11,7 @@ type PubSub struct {
 	subs map[eb.EventName][]chan interface{}
 }
 
-func (ps *PubSub) Subscribe(key eb.EventName) chan interface{} {
+func (ps *PubSub) Subscribe(key eb.EventName, ctx context.Context) chan interface{} {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
@@ -20,7 +21,7 @@ func (ps *PubSub) Subscribe(key eb.EventName) chan interface{} {
 	return ch
 }
 
-func (ps *PubSub) Publish(key eb.EventName, event interface{}) {
+func (ps *PubSub) Publish(key eb.EventName, event interface{}, ctx context.Context) {
 	ps.mu.RLock()
 	defer ps.mu.RUnlock()
 
@@ -29,7 +30,7 @@ func (ps *PubSub) Publish(key eb.EventName, event interface{}) {
 	}
 }
 
-func (ps *PubSub) Unsubscribe(key eb.EventName, ch chan interface{}) {
+func (ps *PubSub) Unsubscribe(key eb.EventName, ch chan interface{}, ctx context.Context) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
