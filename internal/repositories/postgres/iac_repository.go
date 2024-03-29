@@ -25,6 +25,10 @@ func (repo *IaCRepository) Get(id uuid.UUID) (*aggregates.Iac, error) {
 		return nil, errors.Wrap(err, "can't get IaC")
 	}
 
+	return repo.Map(state)
+}
+
+func (repo *IaCRepository) Map(state *models.IaCDb) (*aggregates.Iac, error) {
 	var envs []*vo.IaCEnv
 	if state.Envs != nil {
 		if err := json.Unmarshal(state.Envs, &envs); err != nil {
@@ -84,6 +88,23 @@ func (repo *IaCRepository) Update(iac *aggregates.Iac) error {
 	old.Plans = i.Plans
 	result := repo.database.GormDB.Save(&old)
 	return result.Error
+}
+
+func (repo *IaCRepository) GetAll() []*aggregates.Iac {
+
+	var dbs []*models.IaCDb
+	repo.database.GormDB.Find(&dbs)
+	iacs := make([]*aggregates.Iac, len(dbs))
+	for _, db := range dbs {
+		p, err := repo.Map(db)
+		if err != nil {
+			//handle it
+			continue
+		}
+		iacs = append(iacs, p)
+	}
+	return iacs
+
 }
 
 func (repo *IaCRepository) getState(id uuid.UUID) (*models.IaCDb, error) {

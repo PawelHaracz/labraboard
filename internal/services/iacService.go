@@ -74,3 +74,11 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) 
 
 	return planId, nil
 }
+
+func (svc *IacService) GetProjects() ([]*aggregates.Iac, error) {
+	return svc.repository.GetAll(), nil // TODO implement pagination
+}
+
+func (svc *IacService) GetProject(projectId uuid.UUID) (*aggregates.Iac, error) {
+	return svc.repository.Get(projectId)
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ilyakaznacheev/cleanenv"
 	"labraboard"
+	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/redis"
 	dbmemory "labraboard/internal/repositories/memory"
 	"labraboard/internal/repositories/postgres"
@@ -43,21 +44,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	go ConfigureWorkers(repository)
 
 	eventBus := redis.NewRedisEventBus(cfg.RedisHost, cfg.RedisPort, cfg.RedisPassword, cfg.RedisDB, context.Background())
+	go ConfigureWorkers(eventBus, repository)
 	routersInit := routers.InitRouter(eventBus, repository, db)
 	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
 		panic(err)
 	}
-	//https://www.squash.io/optimizing-gin-in-golang-project-structuring-error-handling-and-testing/
-	//https://github.com/swaggo/gin-swagger
-	//https://github.com/eddycjy/go-gin-example
-	//https://github.com/derekahn/ultimate-go/blob/master/language/interfaces/main.go
-	//https://github.com/percybolmer/ddd-go
-	//https://velocity.tech/blog/build-a-microservice-based-application-in-golang-with-gin-redis-and-mongodb-and-deploy-it-in-k8s
-	//https://www.ompluscator.com/article/golang/practical-ddd-domain-repository/?source=post_page-----d308c9d79ba7--------------------------------
 }
 
 func ConfigRuntime() {
@@ -66,6 +60,6 @@ func ConfigRuntime() {
 	fmt.Printf("Running with %d CPUs\n", nuCPU)
 }
 
-func ConfigureWorkers(repository *dbmemory.Repository) {
-	handlePlan(repository)
+func ConfigureWorkers(subscriber eb.EventSubscriber, repository *dbmemory.Repository) {
+	handlePlan(subscriber, repository)
 }

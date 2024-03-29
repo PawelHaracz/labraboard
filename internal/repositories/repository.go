@@ -20,4 +20,5 @@ type Repository[T aggregates.Aggregate] interface {
 	Get(uuid.UUID) (T, error)
 	Add(T) error
 	Update(T) error
+	GetAll() []T
 }

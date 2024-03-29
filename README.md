@@ -18,8 +18,9 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Http Backend (Get Put)
 - [X] Handle Locks on the state 
 - [X] Handle Destroy
-- [ ] Add postgresql as backend
-- [ ] Redis queue
+- [X] Add postgresql as backend
+- [X] Redis queue
+- [ ] Project CRUD
 - [ ] Time Lease for the state
 - [ ] Handle scheduled plan in TerraformPlanner
 - [ ] Access Token for Backend http
@@ -50,3 +51,13 @@ terraform {
   }
 }
 ```
+
+## Links
+
+1. https://www.squash.io/optimizing-gin-in-golang-project-structuring-error-handling-and-testing/
+2. https://github.com/swaggo/gin-swagger
+3. https://github.com/eddycjy/go-gin-example
+4. https://github.com/derekahn/ultimate-go/blob/master/language/interfaces/main.go
+5. https://github.com/percybolmer/ddd-go
+6. https://velocity.tech/blog/build-a-microservice-based-application-in-golang-with-gin-redis-and-mongodb-and-deploy-it-in-k8s
+7. https://www.ompluscator.com/article/golang/practical-ddd-domain-repository/?source=post_page-----d308c9d79ba7--------------------------------

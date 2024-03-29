@@ -49,6 +49,21 @@ func (repo *TerraformStateRepository) Update(state *aggregates.TerraformState) e
 	return result.Error
 }
 
+func (repo *TerraformStateRepository) GetAll() []*aggregates.TerraformState {
+	var dbs []*models.TerraformStateDb
+	repo.database.GormDB.Find(&dbs)
+	states := make([]*aggregates.TerraformState, len(dbs))
+	for _, state := range dbs {
+		p, err := aggregates.NewTerraformState(state.ID, state.State, state.CreatedOn, state.ModifyOn, state.Lock)
+		if err != nil {
+			//handle it
+			continue
+		}
+		states = append(states, p)
+	}
+	return states
+}
+
 func (repo *TerraformStateRepository) getState(id uuid.UUID) (*models.TerraformStateDb, error) {
 	var state models.TerraformStateDb
 	result := repo.database.GormDB.First(&state, "id =?", id)
