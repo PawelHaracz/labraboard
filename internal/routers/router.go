@@ -7,23 +7,23 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"labraboard/docs"
 	"labraboard/internal/eventbus"
-	"labraboard/internal/repositories/memory"
+	"labraboard/internal/repositories"
 	"labraboard/internal/repositories/postgres"
 	api "labraboard/internal/routers/api"
 	"labraboard/internal/services"
 )
 
-func InitRouter(publisher eventbus.EventPublisher, repository *memory.Repository, database *postgres.Database) *gin.Engine {
+func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.UnitOfWork, database *postgres.Database) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.Use(gzip.Gzip(gzip.BestSpeed))
-	r.Use(UnitedSetup(database))
+	r.Use(UnitedSetup(unitOfWork))
 
 	iac, err := services.NewIacService(
 		services.WithEventBus(publisher),
-		services.WithRepository(repository))
+		services.WithRepository(unitOfWork.IacRepository))
 	if err != nil {
 		panic(err)
 	}

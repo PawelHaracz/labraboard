@@ -52,6 +52,14 @@ func (mr *Repository) Add(c *aggregates.Iac) error {
 	return nil
 }
 
+func (mr *Repository) GetAll() []*aggregates.Iac {
+	var iacs []*aggregates.Iac
+	for _, iac := range mr.iacs {
+		iacs = append(iacs, iac)
+	}
+	return iacs
+}
+
 // Update will replace an existing customer information with the new customer information
 func (mr *Repository) Update(c *aggregates.Iac) error {
 	// Make sure Customer is in the repositories

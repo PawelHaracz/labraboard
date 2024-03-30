@@ -9,7 +9,7 @@ import (
 	"labraboard"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/redis"
-	dbmemory "labraboard/internal/repositories/memory"
+	"labraboard/internal/repositories"
 	"labraboard/internal/repositories/postgres"
 	"labraboard/internal/routers"
 	"runtime"
@@ -40,14 +40,18 @@ func main() {
 		}
 	}(db)
 	db.Migrate()
-	repository, err := dbmemory.NewRepository()
+	uow, err := repositories.NewUnitOfWork(
+		repositories.WithIaCRepositoryDbRepository(db),
+		repositories.WithTerraformStateDbRepository(db),
+		repositories.WithIacPlanRepositoryDbRepository(db),
+	)
 	if err != nil {
 		panic(err)
 	}
 
 	eventBus := redis.NewRedisEventBus(cfg.RedisHost, cfg.RedisPort, cfg.RedisPassword, cfg.RedisDB, context.Background())
-	go ConfigureWorkers(eventBus, repository)
-	routersInit := routers.InitRouter(eventBus, repository, db)
+	go ConfigureWorkers(eventBus, uow)
+	routersInit := routers.InitRouter(eventBus, uow, db)
 	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
 		panic(err)
@@ -60,6 +64,6 @@ func ConfigRuntime() {
 	fmt.Printf("Running with %d CPUs\n", nuCPU)
 }
 
-func ConfigureWorkers(subscriber eb.EventSubscriber, repository *dbmemory.Repository) {
-	handlePlan(subscriber, repository)
+func ConfigureWorkers(subscriber eb.EventSubscriber, uow *repositories.UnitOfWork) {
+	handlePlan(subscriber, uow)
 }

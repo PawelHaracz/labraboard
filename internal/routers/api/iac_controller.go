@@ -4,8 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"labraboard/internal/services"
+	vo "labraboard/internal/valueobjects"
 	"net/http"
 )
+
+type ProjectDto struct {
+	IacType int `json:"type"`
+}
 
 type IacController struct {
 	iac *services.IacService
@@ -37,6 +42,18 @@ func (iac *IacController) GetProject(context *gin.Context) {
 	context.JSON(http.StatusOK, project)
 }
 
-//func (iac *IacController) CreateProject(context *gin.Context) {
-//	project, err := iac.iac.CreateProject()
-//}
+func (iac *IacController) CreateProject(context *gin.Context) {
+
+	var dto ProjectDto
+	if err := context.BindJSON(&dto); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload"})
+	}
+
+	id, err := iac.iac.CreateProject(vo.IaCType(dto.IacType))
+
+	if err != nil {
+		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "cannot retrieve project"})
+		return
+	}
+	context.JSON(http.StatusOK, id)
+}

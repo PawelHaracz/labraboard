@@ -6,15 +6,15 @@ import (
 	"github.com/go-git/go-git/v5"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
-	dbmemory "labraboard/internal/repositories/memory"
+	"labraboard/internal/repositories"
 	iacSvc "labraboard/internal/services/iac"
 	vo "labraboard/internal/valueobjects"
 	"os"
 )
 
-func handlePlan(eventSubscriber eb.EventSubscriber, repository *dbmemory.Repository) {
+func handlePlan(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) {
 	pl := eventSubscriber.Subscribe(eb.TRIGGERED_PLAN, context.Background())
-	go func(repository *dbmemory.Repository) {
+	go func(repository *repositories.UnitOfWork) {
 		for msg := range pl {
 			switch obj := msg.(type) {
 			case events.PlanTriggered:
@@ -24,7 +24,7 @@ func handlePlan(eventSubscriber eb.EventSubscriber, repository *dbmemory.Reposit
 				fmt.Errorf("cannot handle message type %T", obj)
 			}
 		}
-	}(repository)
+	}(unitOfWork)
 }
 
 func createBackendFile(path string, statePath string) error {
@@ -48,8 +48,8 @@ func createBackendFile(path string, statePath string) error {
 	return nil
 }
 
-func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTriggered) {
-	iac, err := repository.Get(obj.ProjectId)
+func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTriggered) {
+	iac, err := unitOfWork.IacRepository.Get(obj.ProjectId)
 	if err != nil {
 		panic(err)
 	}
@@ -75,7 +75,7 @@ func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTrigger
 		}
 	}()
 
-	if err = repository.Update(iac); err != nil {
+	if err = unitOfWork.IacRepository.Update(iac); err != nil {
 		panic(err)
 	}
 	if err := createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
@@ -90,20 +90,20 @@ func handlePlanTriggered(repository *dbmemory.Repository, obj events.PlanTrigger
 	plan, err := tofu.Plan(obj.PlanId, iac.GetEnvs(), iac.GetVariables())
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
-		if err = repository.Update(iac); err != nil {
+		if err = unitOfWork.IacRepository.Update(iac); err != nil {
 			panic(err)
 		}
 	}
 	iac.UpdatePlan(obj.PlanId, vo.Succeed)
-	if err = repository.AddPlan(plan.GetPlan()); err != nil {
+	if err = unitOfWork.IacPlan.Add(plan.GetPlan()); err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
-		if err = repository.Update(iac); err != nil {
+		if err = unitOfWork.IacRepository.Update(iac); err != nil {
 			panic(err)
 		}
 	}
 
 	iac.UpdatePlan(obj.PlanId, vo.Succeed)
-	if err = repository.Update(iac); err != nil {
+	if err = unitOfWork.IacRepository.Update(iac); err != nil {
 		panic(err)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
 	"labraboard/internal/repositories"
+	vo "labraboard/internal/valueobjects"
 )
 
 type IacConfiguration func(os *IacService) error
@@ -81,4 +82,18 @@ func (svc *IacService) GetProjects() ([]*aggregates.Iac, error) {
 
 func (svc *IacService) GetProject(projectId uuid.UUID) (*aggregates.Iac, error) {
 	return svc.repository.Get(projectId)
+}
+
+func (svc *IacService) CreateProject(iacType vo.IaCType) (uuid.UUID, error) {
+	projectId := uuid.New()
+	iac, err := aggregates.NewIac(projectId, iacType, make([]*vo.Plans, 0), make([]*vo.IaCEnv, 0), vo.IaCRepo{}, make([]*vo.IaCVariable, 0))
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	if err := svc.repository.Add(iac); err != nil {
+		return uuid.Nil, err
+	}
+
+	return projectId, nil
 }
