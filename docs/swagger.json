@@ -27,6 +27,96 @@
                 }
             }
         },
+        "/project": {
+            "get": {
+                "description": "projects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project"
+                ],
+                "summary": "Get all projects",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/aggregates.Iac"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project"
+                ],
+                "summary": "Create a new project",
+                "parameters": [
+                    {
+                        "description": "Create project",
+                        "name": "project",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ProjectDto"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/project/{projectId}": {
+            "get": {
+                "description": "Fetch a project by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "project"
+                ],
+                "summary": "Fetch a project by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "project id",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/aggregates.Iac"
+                        }
+                    }
+                }
+            }
+        },
         "/state/terraform/{projectId}": {
             "get": {
                 "consumes": [
@@ -258,6 +348,50 @@
                     }
                 }
             }
+        }
+    },
+    "definitions": {
+        "aggregates.Iac": {
+            "type": "object",
+            "properties": {
+                "iacType": {
+                    "$ref": "#/definitions/valueobjects.IaCType"
+                },
+                "repo": {
+                    "$ref": "#/definitions/valueobjects.IaCRepo"
+                }
+            }
+        },
+        "api.ProjectDto": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "valueobjects.IaCRepo": {
+            "type": "object",
+            "properties": {
+                "defaultBranch": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "valueobjects.IaCType": {
+            "type": "integer",
+            "enum": [
+                0
+            ],
+            "x-enum-varnames": [
+                "Terraform"
+            ]
         }
     }
 }

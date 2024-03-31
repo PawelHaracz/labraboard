@@ -59,7 +59,7 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) 
 	}
 
 	iac.AddPlan(planId)
-	err = svc.repository.Add(iac)
+	err = svc.repository.Update(iac)
 	if err != nil {
 		return uuid.Nil, err
 	}

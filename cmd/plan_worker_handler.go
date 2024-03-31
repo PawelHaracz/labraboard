@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/go-git/go-git/v5"
 	eb "labraboard/internal/eventbus"
@@ -16,13 +17,13 @@ func handlePlan(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.Uni
 	pl := eventSubscriber.Subscribe(eb.TRIGGERED_PLAN, context.Background())
 	go func(repository *repositories.UnitOfWork) {
 		for msg := range pl {
-			switch obj := msg.(type) {
-			case events.PlanTriggered:
-				fmt.Println("Received message:", msg)
-				handlePlanTriggered(repository, obj)
-			default:
-				fmt.Errorf("cannot handle message type %T", obj)
+			var event = events.PlanTriggered{}
+			err := json.Unmarshal(msg, &event)
+			if err != nil {
+				fmt.Errorf("cannot handle message type %T", event)
 			}
+			fmt.Println("Received message:", msg)
+			handlePlanTriggered(repository, event)
 		}
 	}(unitOfWork)
 }

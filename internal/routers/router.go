@@ -30,6 +30,7 @@ func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.Unit
 
 	tfController, err := api.NewTerraformPlanController(iac)
 	stateController, err := api.NewStateController()
+	iacController, err := api.NewIacController(iac)
 
 	if err != nil {
 		panic(err)
@@ -41,6 +42,12 @@ func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.Unit
 		eg := v1.Group("/example")
 		{
 			eg.GET("/helloworld", api.HelloWorld)
+		}
+		project := v1.Group("/project")
+		{
+			project.GET("/", iacController.GetProjects)
+			project.POST("/", iacController.CreateProject)
+			project.GET("/:projectId", iacController.GetProject)
 		}
 		state := v1.Group("/state/terraform")
 		{

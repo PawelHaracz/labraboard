@@ -20,6 +20,15 @@ func NewIacController(service *services.IacService) (*IacController, error) {
 	return &IacController{iac: service}, nil
 }
 
+// GetProjects fetch all projects
+// @Summary Get all projects
+// @Schemes
+// @Description projects
+// @Tags project
+// @Accept json
+// @Produce json
+// @Success 200 {array} aggregates.Iac
+// @Router /project [GET]
 func (iac *IacController) GetProjects(context *gin.Context) {
 	projects, err := iac.iac.GetProjects()
 
@@ -31,6 +40,16 @@ func (iac *IacController) GetProjects(context *gin.Context) {
 	context.JSON(http.StatusOK, projects) //TODO map to a struct
 }
 
+// GetProject Fetch a project by id
+// @Summary Fetch a project by id
+// @Schemes
+// @Description Fetch a project by id
+// @Param projectId path string true "project id"
+// @Tags project
+// @Accept json
+// @Produce json
+// @Success 200 {object} aggregates.Iac
+// @Router /project/{projectId} [GET]
 func (iac *IacController) GetProject(context *gin.Context) {
 	projectId := context.Param("projectId")
 	project, err := iac.iac.GetProject(uuid.MustParse(projectId))
@@ -42,6 +61,16 @@ func (iac *IacController) GetProject(context *gin.Context) {
 	context.JSON(http.StatusOK, project)
 }
 
+// CreateProject Create a new project
+// @Summary Create a new project
+// @Schemes
+// @Description Create a new project
+// @Tags project
+// @Param project body ProjectDto true "Create project"
+// @Accept json
+// @Produce json
+// @Success 200 {string} projectId
+// @Router /project [POST]
 func (iac *IacController) CreateProject(context *gin.Context) {
 
 	var dto ProjectDto

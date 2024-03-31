@@ -1,3 +1,31 @@
+definitions:
+  aggregates.Iac:
+    properties:
+      iacType:
+        $ref: '#/definitions/valueobjects.IaCType'
+      repo:
+        $ref: '#/definitions/valueobjects.IaCRepo'
+    type: object
+  api.ProjectDto:
+    properties:
+      type:
+        type: integer
+    type: object
+  valueobjects.IaCRepo:
+    properties:
+      defaultBranch:
+        type: string
+      path:
+        type: string
+      url:
+        type: string
+    type: object
+  valueobjects.IaCType:
+    enum:
+    - 0
+    type: integer
+    x-enum-varnames:
+    - Terraform
 info:
   contact: {}
 paths:
@@ -16,6 +44,65 @@ paths:
       summary: ping example
       tags:
       - example
+  /project:
+    get:
+      consumes:
+      - application/json
+      description: projects
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/aggregates.Iac'
+            type: array
+      summary: Get all projects
+      tags:
+      - project
+    post:
+      consumes:
+      - application/json
+      description: Create a new project
+      parameters:
+      - description: Create project
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/api.ProjectDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Create a new project
+      tags:
+      - project
+  /project/{projectId}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch a project by id
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/aggregates.Iac'
+      summary: Fetch a project by id
+      tags:
+      - project
   /state/terraform/{projectId}:
     get:
       consumes:
