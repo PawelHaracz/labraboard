@@ -10,7 +10,7 @@ import (
 
 func TestNewIacService(t *testing.T) {
 	//tfPlanner, _ := models.NewTerraformPlanner()
-	r, _ := memory.NewRepository()
+	r := memory.NewGenericRepository[*aggregates.Iac]()
 
 	is, err := NewIacService(
 		//WithPlanner(tfPlanner),
@@ -32,7 +32,7 @@ func TestNewIacService(t *testing.T) {
 		t.Errorf("error: %v", "IacService.repositories is nil")
 	}
 
-	aggregate, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform, make([]*valueobjects.Plans, 0), make([]*valueobjects.IaCEnv, 0), valueobjects.IaCRepo{}, make([]*valueobjects.IaCVariable, 0))
+	aggregate, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform, make([]*valueobjects.Plans, 0), make([]*valueobjects.IaCEnv, 0), nil, make([]*valueobjects.IaCVariable, 0))
 	err = is.repository.Add(aggregate)
 
 	if err != nil {
@@ -42,7 +42,7 @@ func TestNewIacService(t *testing.T) {
 
 func TestIacService_RunTerraformPlan(t *testing.T) {
 	//tfPlanner, _ := models.NewTerraformPlanner()
-	r, _ := memory.NewRepository()
+	r := memory.NewGenericRepository[*aggregates.Iac]()
 
 	is, _ := NewIacService(
 		//WithPlanner(tfPlanner),

@@ -54,7 +54,7 @@ func (r *RedisEventBus) Subscribe(key eventbus.EventName, ctx context.Context) c
 	return item
 }
 
-func (r *RedisEventBus) Unsubscribe(key eventbus.EventName, ch chan interface{}, ctx context.Context) {
+func (r *RedisEventBus) Unsubscribe(key eventbus.EventName, ch chan []byte, ctx context.Context) {
 
 }
 

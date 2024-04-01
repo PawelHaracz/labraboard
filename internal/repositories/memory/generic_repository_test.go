@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestMemory_GetIac(t *testing.T) {
+func TestGenericMemory_GetIac(t *testing.T) {
 	type testCase struct {
 		name        string
 		id          uuid.UUID
@@ -17,18 +17,13 @@ func TestMemory_GetIac(t *testing.T) {
 
 	// Create a fake customer to add to repositories
 	preparedId, _ := uuid.Parse("f47ac10b-58cc-0372-8567-0e02b2c3d479")
-	iac, err := aggregates.NewIac(preparedId, vo.Terraform, make([]*vo.Plans, 0), make([]*vo.IaCEnv, 0), vo.IaCRepo{}, make([]*vo.IaCVariable, 0))
+	iac, err := aggregates.NewIac(preparedId, vo.Terraform, make([]*vo.Plans, 0), make([]*vo.IaCEnv, 0), nil, make([]*vo.IaCVariable, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
 	id := iac.GetID()
-	// Create the repo to use, and add some test Data to it for testing
-	// Skip Factory for this
-	repo := Repository{
-		iacs: map[uuid.UUID]*aggregates.Iac{
-			id: iac,
-		},
-	}
+
+	repo := NewGenericRepository[*aggregates.Iac]()
 
 	testCases := []testCase{
 		{
@@ -36,7 +31,7 @@ func TestMemory_GetIac(t *testing.T) {
 			expectedErr: nil,
 		},
 	}
-
+	repo.Add(iac)
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 

@@ -86,3 +86,5 @@ func (iac *IacController) CreateProject(context *gin.Context) {
 	}
 	context.JSON(http.StatusOK, id)
 }
+
+//TODO IMPLEMENT DTOS AND REPOSITORY CONNECTION

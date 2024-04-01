@@ -26,13 +26,13 @@ type Iac struct {
 	variables []*vo.IaCVariable
 }
 
-func NewIac(id uuid.UUID, iacType vo.IaCType, plans []*vo.Plans, envs []*vo.IaCEnv, repo vo.IaCRepo, variables []*vo.IaCVariable) (*Iac, error) {
+func NewIac(id uuid.UUID, iacType vo.IaCType, plans []*vo.Plans, envs []*vo.IaCEnv, repo *vo.IaCRepo, variables []*vo.IaCVariable) (*Iac, error) {
 	aggregate := &Iac{}
 	aggregate.id = id
 	aggregate.plans = plans
 	aggregate.envs = envs
 	aggregate.IacType = iacType
-	aggregate.Repo = &repo
+	aggregate.Repo = repo
 	aggregate.variables = variables
 	return aggregate, nil
 }

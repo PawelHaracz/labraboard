@@ -2,20 +2,21 @@ package memory
 
 import (
 	"context"
+	"encoding/json"
 	eb "labraboard/internal/eventbus"
 	"sync"
 )
 
 type PubSub struct {
 	mu   sync.RWMutex
-	subs map[eb.EventName][]chan interface{}
+	subs map[eb.EventName][]chan []byte
 }
 
-func (ps *PubSub) Subscribe(key eb.EventName, ctx context.Context) chan interface{} {
+func (ps *PubSub) Subscribe(key eb.EventName, ctx context.Context) chan []byte {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
-	ch := make(chan interface{}, 1)
+	ch := make(chan []byte, 1)
 	ps.subs[key] = append(ps.subs[key], ch)
 
 	return ch
@@ -26,11 +27,12 @@ func (ps *PubSub) Publish(key eb.EventName, event interface{}, ctx context.Conte
 	defer ps.mu.RUnlock()
 
 	for _, ch := range ps.subs[key] {
-		ch <- event
+		b, _ := json.Marshal(event)
+		ch <- b
 	}
 }
 
-func (ps *PubSub) Unsubscribe(key eb.EventName, ch chan interface{}, ctx context.Context) {
+func (ps *PubSub) Unsubscribe(key eb.EventName, ch chan []byte, ctx context.Context) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
@@ -45,7 +47,7 @@ func (ps *PubSub) Unsubscribe(key eb.EventName, ch chan interface{}, ctx context
 
 func newMemoryPublisher() *PubSub {
 	return &PubSub{
-		subs: make(map[eb.EventName][]chan interface{}),
+		subs: make(map[eb.EventName][]chan []byte),
 	}
 }
 

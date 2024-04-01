@@ -8,7 +8,7 @@ type EventPublisher interface {
 
 type EventSubscriber interface {
 	Subscribe(key EventName, ctx context.Context) chan []byte
-	Unsubscribe(key EventName, ch chan interface{}, ctx context.Context)
+	Unsubscribe(key EventName, ch chan []byte, ctx context.Context)
 }
 
 type Bus struct {

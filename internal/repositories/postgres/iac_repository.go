@@ -48,7 +48,7 @@ func (repo *IaCRepository) Map(state *models.IaCDb) (*aggregates.Iac, error) {
 		}
 	}
 
-	var iacRepo vo.IaCRepo
+	var iacRepo *vo.IaCRepo
 	if state.Repo != nil {
 		if err := json.Unmarshal(state.Repo, &iacRepo); err != nil {
 			return nil, errors.Wrap(err, "can't get repo on iac")

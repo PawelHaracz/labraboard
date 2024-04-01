@@ -3,6 +3,7 @@ package repositories
 import (
 	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
+	"labraboard/internal/repositories/memory"
 	db "labraboard/internal/repositories/postgres"
 )
 
@@ -73,5 +74,29 @@ func WithIacPlanRepositoryDbRepository(database *db.Database) UnitOfWorkConfigur
 	return func(uow *UnitOfWork) error {
 		uow.IacPlan = repository
 		return nil
+	}
+}
+
+func WithIacPlanRepositoryDbRepositoryMemory(repository interface{}) UnitOfWorkConfiguration {
+	switch repo := repository.(type) {
+	case *memory.GenericRepository[*aggregates.IacPlan]:
+		return func(uow *UnitOfWork) error {
+			uow.IacPlan = repo
+			return nil
+		}
+	case *memory.GenericRepository[*aggregates.Iac]:
+		return func(uow *UnitOfWork) error {
+			uow.IacRepository = repo
+			return nil
+		}
+	case *memory.GenericRepository[*aggregates.TerraformState]:
+		return func(uow *UnitOfWork) error {
+			uow.TerraformStateDbRepository = repo
+			return nil
+		}
+	default:
+		return func(uow *UnitOfWork) error {
+			return errors.New("repository is not a IacPlanRepository")
+		}
 	}
 }
