@@ -103,5 +103,7 @@ func (c *TerraformPlanController) DeploymentTerraform(g *gin.Context) {
 // @Success 200 {string} FetchTerraformPlans
 // @Router /terraform/{projectId}/plan [GET]
 func (c *TerraformPlanController) FetchTerraformPlans(g *gin.Context) {
-
+	//todo implent plans
 }
+
+//TODO IMPLEMENT REST PLANS AND HANDLE ERROR ON DEFFER FOLDER AFTER CLEARING THE FOLDER

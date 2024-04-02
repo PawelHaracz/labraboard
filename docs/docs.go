@@ -57,7 +57,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/aggregates.Iac"
+                                "$ref": "#/definitions/dtos.GetProjectBaseDto"
                             }
                         }
                     }
@@ -82,7 +82,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.ProjectDto"
+                            "$ref": "#/definitions/dtos.CreateProjectDto"
                         }
                     }
                 ],
@@ -122,7 +122,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/aggregates.Iac"
+                            "$ref": "#/definitions/dtos.GetProjectDto"
                         }
                     }
                 }
@@ -362,47 +362,60 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "aggregates.Iac": {
+        "dtos.CreateProjectDto": {
             "type": "object",
             "properties": {
-                "iacType": {
-                    "$ref": "#/definitions/valueobjects.IaCType"
+                "repositoryBranch:": {
+                    "type": "string"
                 },
-                "repo": {
-                    "$ref": "#/definitions/valueobjects.IaCRepo"
-                }
-            }
-        },
-        "api.ProjectDto": {
-            "type": "object",
-            "properties": {
+                "repositoryTerraformPath": {
+                    "type": "string"
+                },
+                "repositoryUrl": {
+                    "type": "string"
+                },
                 "type": {
                     "type": "integer"
                 }
             }
         },
-        "valueobjects.IaCRepo": {
+        "dtos.GetProjectBaseDto": {
             "type": "object",
             "properties": {
-                "defaultBranch": {
+                "id": {
                     "type": "string"
                 },
-                "path": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
+                "type": {
+                    "type": "integer"
                 }
             }
         },
-        "valueobjects.IaCType": {
-            "type": "integer",
-            "enum": [
-                0
-            ],
-            "x-enum-varnames": [
-                "Terraform"
-            ]
+        "dtos.GetProjectDto": {
+            "type": "object",
+            "properties": {
+                "envs": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "repositoryBranch:": {
+                    "type": "string"
+                },
+                "repositoryTerraformPath": {
+                    "type": "string"
+                },
+                "repositoryUrl": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
         }
     }
 }`

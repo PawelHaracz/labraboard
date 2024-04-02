@@ -1,31 +1,40 @@
 definitions:
-  aggregates.Iac:
+  dtos.CreateProjectDto:
     properties:
-      iacType:
-        $ref: '#/definitions/valueobjects.IaCType'
-      repo:
-        $ref: '#/definitions/valueobjects.IaCRepo'
-    type: object
-  api.ProjectDto:
-    properties:
+      'repositoryBranch:':
+        type: string
+      repositoryTerraformPath:
+        type: string
+      repositoryUrl:
+        type: string
       type:
         type: integer
     type: object
-  valueobjects.IaCRepo:
+  dtos.GetProjectBaseDto:
     properties:
-      defaultBranch:
+      id:
         type: string
-      path:
-        type: string
-      url:
-        type: string
+      type:
+        type: integer
     type: object
-  valueobjects.IaCType:
-    enum:
-    - 0
-    type: integer
-    x-enum-varnames:
-    - Terraform
+  dtos.GetProjectDto:
+    properties:
+      envs:
+        items:
+          additionalProperties: true
+          type: object
+        type: array
+      id:
+        type: string
+      'repositoryBranch:':
+        type: string
+      repositoryTerraformPath:
+        type: string
+      repositoryUrl:
+        type: string
+      type:
+        type: integer
+    type: object
 info:
   contact: {}
 paths:
@@ -56,7 +65,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/aggregates.Iac'
+              $ref: '#/definitions/dtos.GetProjectBaseDto'
             type: array
       summary: Get all projects
       tags:
@@ -71,7 +80,7 @@ paths:
         name: project
         required: true
         schema:
-          $ref: '#/definitions/api.ProjectDto'
+          $ref: '#/definitions/dtos.CreateProjectDto'
       produces:
       - application/json
       responses:
@@ -99,7 +108,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/aggregates.Iac'
+            $ref: '#/definitions/dtos.GetProjectDto'
       summary: Fetch a project by id
       tags:
       - project
