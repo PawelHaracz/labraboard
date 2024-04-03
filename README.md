@@ -1,15 +1,27 @@
 # labraboard
 
+![Labraboard](.img/logo.png)
+## About Labraboard
+
+Labraboard is a state-aware Infrastructure as Code (IaC) platform that focuses on managing Terraform. It is designed to streamline the process of running plans and applying infrastructure changes. 
+
+The platform provides a robust set of features including InMemory storage, HTTP backend, PostgreSQL backend, Redis queue, and more. It also supports handling locks on the state, destroying, and overriding the backend.
+
+Labraboard is equipped with a custom environment and variables for Terraform, OpenTofu, making it a versatile tool for managing and deploying infrastructure. It also offers an HTTP backend where the state is kept, and during the running plan or apply, the backend configuration is added automatically by overriding the backend.
+
+Future enhancements include project CRUD, time lease for the state, integration with Git, user configuration, web interface, and more.
+
+With Labraboard, you can efficiently manage your infrastructure and streamline your IaC processes. 
+
 ## Starting point
 
 Swagger docs has to be updated to reflect the new endpoints. 
 It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 
-
 ### Checking changes 
 `git log --pretty=format:"%h%x09%an%x09%ad%x09%s"`
 
-## TODO list
+## RoadMap list
 - [X] Reading plan
 - [X] InMemory storage
 - [X] Trigger run plan
