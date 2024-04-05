@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"labraboard/internal/routers/api/dtos"
 	"labraboard/internal/services"
 	"net/http"
 )
@@ -49,13 +50,18 @@ func (c *TerraformPlanController) CreateTerraformPlan(g *gin.Context) {
 // @Tags terraform
 // @Accept json
 // @Produce json
-// @Success 200 {string} GetTerraformPlan
+// @Success 200 {object} dtos.PlanWithOutputDto
 // @Router /terraform/{projectId}/plan/{planId} [GET]
 func (c *TerraformPlanController) GetTerraformPlan(g *gin.Context) {
 	planId := g.Param("planId")
 	projectId := g.Param("projectId")
-	g.String(http.StatusOK, "hello world %s %s", planId, projectId)
-	//todo implement queue https://prasanthmj.github.io/go/go-task-queue-with-badgerdb-backend/
+	plan, err := c.IacService.GetPlan(uuid.MustParse(projectId), uuid.MustParse(planId))
+	if err != nil {
+		g.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	g.JSON(http.StatusOK, plan)
 }
 
 // ApplyTerraformPlan
@@ -100,10 +106,20 @@ func (c *TerraformPlanController) DeploymentTerraform(g *gin.Context) {
 // @Tags terraform
 // @Accept json
 // @Produce json
-// @Success 200 {string} FetchTerraformPlans
+// @Success 200 {array} dtos.PlanDto
 // @Router /terraform/{projectId}/plan [GET]
 func (c *TerraformPlanController) FetchTerraformPlans(g *gin.Context) {
-	//todo implent plans
+	projectId := g.Param("projectId")
+	plans := c.IacService.GetPlans(uuid.MustParse(projectId))
+	dto := make([]*dtos.PlanDto, 0)
+
+	for _, plan := range plans {
+		dto = append(dto, &dtos.PlanDto{Id: plan.Id.String(),
+			Status:    string(plan.Status),
+			CreatedOn: plan.CreatedOn,
+		})
+	}
+	g.JSON(http.StatusOK, dto)
 }
 
-//TODO IMPLEMENT REST PLANS AND HANDLE ERROR ON DEFFER FOLDER AFTER CLEARING THE FOLDER
+//TODO IMPLEMENT HANDLE ERROR ON DEFFER FOLDER AFTER CLEARING THE FOLDER

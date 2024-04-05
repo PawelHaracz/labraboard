@@ -35,6 +35,25 @@ definitions:
       type:
         type: integer
     type: object
+  dtos.PlanDto:
+    properties:
+      createdOn:
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+    type: object
+  dtos.PlanWithOutputDto:
+    properties:
+      createdOn:
+        type: string
+      id:
+        type: string
+      outputs: {}
+      status:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -162,7 +181,9 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            items:
+              $ref: '#/definitions/dtos.PlanDto'
+            type: array
       summary: Fetch all the terraform plans for a given project
       tags:
       - terraform
@@ -207,7 +228,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/dtos.PlanWithOutputDto'
       summary: Method returns the terraform plan output for a given plan id
       tags:
       - terraform

@@ -84,6 +84,10 @@ func (c *Iac) GetPlan(id uuid.UUID) (*vo.Plans, error) {
 	return nil, ErrPlanNotFound
 }
 
+func (c *Iac) GetPlans() []*vo.Plans {
+	return c.plans
+}
+
 func (c *Iac) UpdatePlan(id uuid.UUID, status vo.PlanStatus) {
 	if plan, err := c.GetPlan(id); err == nil {
 		utc := time.Now().UTC()

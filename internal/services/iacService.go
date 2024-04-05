@@ -8,14 +8,16 @@ import (
 	"labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
 	"labraboard/internal/repositories"
+	"labraboard/internal/routers/api/dtos"
 	vo "labraboard/internal/valueobjects"
 )
 
 type IacConfiguration func(os *IacService) error
 
 type IacService struct {
-	publisher  eventbus.EventPublisher
-	repository repositories.Repository[*aggregates.Iac]
+	publisher         eventbus.EventPublisher
+	repository        repositories.Repository[*aggregates.Iac]
+	iacPlanRepository repositories.Repository[*aggregates.IacPlan]
 }
 
 func NewIacService(configs ...IacConfiguration) (*IacService, error) {
@@ -97,4 +99,42 @@ func (svc *IacService) CreateProject(iacType vo.IaCType, repo *vo.IaCRepo) (uuid
 	}
 
 	return projectId, nil
+}
+
+func (svc *IacService) GetPlans(projectId uuid.UUID) []*vo.Plans {
+	iac, err := svc.repository.Get(projectId)
+	if err != nil {
+		return nil
+	}
+	return iac.GetPlans()
+}
+
+func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID) (*dtos.PlanWithOutputDto, error) {
+	iac, err := svc.repository.Get(projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	plan, err := iac.GetPlan(planId)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &dtos.PlanWithOutputDto{
+		Id:        plan.Id.String(),
+		CreatedOn: plan.CreatedOn,
+		Status:    string(plan.Status),
+	}
+
+	p, err := svc.iacPlanRepository.Get(plan.Id)
+	if err == nil {
+		m := map[string]interface{}{
+			"changes": p.GetChanges(),
+			"json":    p.GetPlanJson(),
+		}
+		result.Outputs = m
+
+		p.GetPlanJson()
+	}
+	return result, nil
 }

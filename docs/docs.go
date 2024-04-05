@@ -202,7 +202,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.PlanDto"
+                            }
                         }
                     }
                 }
@@ -269,7 +272,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dtos.PlanWithOutputDto"
                         }
                     }
                 }
@@ -414,6 +417,35 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "integer"
+                }
+            }
+        },
+        "dtos.PlanDto": {
+            "type": "object",
+            "properties": {
+                "createdOn": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.PlanWithOutputDto": {
+            "type": "object",
+            "properties": {
+                "createdOn": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "outputs": {},
+                "status": {
+                    "type": "string"
                 }
             }
         }
