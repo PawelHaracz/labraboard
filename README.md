@@ -32,7 +32,9 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Handle Destroy
 - [X] Add postgresql as backend
 - [X] Redis queue
-- [ ] Project CRUD
+- [X] Project CRUD
+- [ ] Add repository trigger aggregate and relate with plans
+- [ ] Bug fixing e2e testing
 - [ ] Time Lease for the state
 - [ ] Handle scheduled plan in TerraformPlanner
 - [ ] Access Token for Backend http

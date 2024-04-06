@@ -121,5 +121,3 @@ func (c *TerraformPlanController) FetchTerraformPlans(g *gin.Context) {
 	}
 	g.JSON(http.StatusOK, dto)
 }
-
-//TODO IMPLEMENT HANDLE ERROR ON DEFFER FOLDER AFTER CLEARING THE FOLDER

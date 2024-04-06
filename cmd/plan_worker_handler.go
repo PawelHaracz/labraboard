@@ -69,12 +69,12 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 	if _, err := gitRepo.Branch(iac.Repo.DefaultBranch); err != nil {
 		panic(err)
 	}
-	defer func() {
+	defer func(folderPath string) {
 		err := os.RemoveAll(folderPath)
 		if err != nil {
 			return
 		}
-	}()
+	}(folderPath)
 
 	if err = unitOfWork.IacRepository.Update(iac); err != nil {
 		panic(err)
@@ -101,6 +101,7 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 		if err = unitOfWork.IacRepository.Update(iac); err != nil {
 			panic(err)
 		}
+		return
 	}
 
 	iac.UpdatePlan(obj.PlanId, vo.Succeed)

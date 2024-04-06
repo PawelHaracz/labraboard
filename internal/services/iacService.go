@@ -15,9 +15,8 @@ import (
 type IacConfiguration func(os *IacService) error
 
 type IacService struct {
-	publisher         eventbus.EventPublisher
-	repository        repositories.Repository[*aggregates.Iac]
-	iacPlanRepository repositories.Repository[*aggregates.IacPlan]
+	publisher  eventbus.EventPublisher
+	unitOfWork *repositories.UnitOfWork
 }
 
 func NewIacService(configs ...IacConfiguration) (*IacService, error) {
@@ -31,7 +30,7 @@ func NewIacService(configs ...IacConfiguration) (*IacService, error) {
 	if is.publisher == nil {
 		return nil, errors.New("publisher is not set")
 	}
-	if is.repository == nil {
+	if is.unitOfWork == nil {
 		return nil, errors.New("repositories is not set")
 	}
 
@@ -45,9 +44,9 @@ func WithEventBus(eb eventbus.EventPublisher) IacConfiguration {
 	}
 }
 
-func WithRepository(r repositories.Repository[*aggregates.Iac]) IacConfiguration {
+func WithUnitOfWork(r *repositories.UnitOfWork) IacConfiguration {
 	return func(is *IacService) error {
-		is.repository = r
+		is.unitOfWork = r
 		return nil
 	}
 }
@@ -55,13 +54,13 @@ func WithRepository(r repositories.Repository[*aggregates.Iac]) IacConfiguration
 func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) {
 	planId := uuid.New()
 
-	iac, err := svc.repository.Get(projectId)
+	iac, err := svc.unitOfWork.IacRepository.Get(projectId)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
 	iac.AddPlan(planId)
-	err = svc.repository.Update(iac)
+	err = svc.unitOfWork.IacRepository.Update(iac)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -79,11 +78,11 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) 
 }
 
 func (svc *IacService) GetProjects() ([]*aggregates.Iac, error) {
-	return svc.repository.GetAll(), nil // TODO implement pagination
+	return svc.unitOfWork.IacRepository.GetAll(), nil // TODO implement pagination
 }
 
 func (svc *IacService) GetProject(projectId uuid.UUID) (*aggregates.Iac, error) {
-	return svc.repository.Get(projectId)
+	return svc.unitOfWork.IacRepository.Get(projectId)
 }
 
 func (svc *IacService) CreateProject(iacType vo.IaCType, repo *vo.IaCRepo) (uuid.UUID, error) {
@@ -94,7 +93,7 @@ func (svc *IacService) CreateProject(iacType vo.IaCType, repo *vo.IaCRepo) (uuid
 		return uuid.Nil, err
 	}
 
-	if err := svc.repository.Add(iac); err != nil {
+	if err := svc.unitOfWork.IacRepository.Add(iac); err != nil {
 		return uuid.Nil, err
 	}
 
@@ -102,7 +101,7 @@ func (svc *IacService) CreateProject(iacType vo.IaCType, repo *vo.IaCRepo) (uuid
 }
 
 func (svc *IacService) GetPlans(projectId uuid.UUID) []*vo.Plans {
-	iac, err := svc.repository.Get(projectId)
+	iac, err := svc.unitOfWork.IacRepository.Get(projectId)
 	if err != nil {
 		return nil
 	}
@@ -110,7 +109,7 @@ func (svc *IacService) GetPlans(projectId uuid.UUID) []*vo.Plans {
 }
 
 func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID) (*dtos.PlanWithOutputDto, error) {
-	iac, err := svc.repository.Get(projectId)
+	iac, err := svc.unitOfWork.IacRepository.Get(projectId)
 	if err != nil {
 		return nil, err
 	}
@@ -125,16 +124,22 @@ func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID) (*dtos.Pla
 		CreatedOn: plan.CreatedOn,
 		Status:    string(plan.Status),
 	}
+	if plan.Status == vo.Succeed {
+		p, err := svc.unitOfWork.IacPlan.Get(plan.Id)
+		add, update, deleteItem := p.GetChanges()
+		if err == nil {
+			m := map[string]interface{}{
+				"changes": map[string]interface{}{
+					"add":    add,
+					"update": update,
+					"delete": deleteItem,
+				},
+				"json": p.GetPlanJson(),
+			}
+			result.Outputs = m
 
-	p, err := svc.iacPlanRepository.Get(plan.Id)
-	if err == nil {
-		m := map[string]interface{}{
-			"changes": p.GetChanges(),
-			"json":    p.GetPlanJson(),
+			p.GetPlanJson()
 		}
-		result.Outputs = m
-
-		p.GetPlanJson()
 	}
 	return result, nil
 }

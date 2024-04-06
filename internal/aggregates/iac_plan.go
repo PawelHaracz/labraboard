@@ -17,7 +17,8 @@ var (
 )
 
 type IacPlan struct {
-	id            uuid.UUID
+	id uuid.UUID
+	//gitsha        string todo add gitsha
 	changeSummary *iacPlans.ChangeSummaryIacPlan
 	changes       []iacPlans.ChangesIacPlan
 	planType      IaCPlanType
@@ -89,6 +90,9 @@ func (plan *IacPlan) GetPlanJson() string {
 }
 
 func (plan *IacPlan) Map() (*models.IaCPlanDb, error) {
+	if plan == nil {
+		return nil, errors.New("can't map nil IaC")
+	}
 	changes, err := json.Marshal(plan.changes)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't marshall changes on iac")

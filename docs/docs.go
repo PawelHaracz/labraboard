@@ -137,7 +137,6 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "terraform",
                     "state"
                 ],
                 "summary": "Get terraform state for a given project",
@@ -160,7 +159,6 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "terraform",
                     "state"
                 ],
                 "summary": "Update terraform state for a given project",

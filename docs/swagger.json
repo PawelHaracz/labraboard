@@ -126,7 +126,6 @@
                     "application/json"
                 ],
                 "tags": [
-                    "terraform",
                     "state"
                 ],
                 "summary": "Get terraform state for a given project",
@@ -149,7 +148,6 @@
                     "application/json"
                 ],
                 "tags": [
-                    "terraform",
                     "state"
                 ],
                 "summary": "Update terraform state for a given project",

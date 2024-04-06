@@ -146,7 +146,6 @@ paths:
       responses: {}
       summary: Get terraform state for a given project
       tags:
-      - terraform
       - state
     post:
       consumes:
@@ -162,7 +161,6 @@ paths:
       responses: {}
       summary: Update terraform state for a given project
       tags:
-      - terraform
       - state
   /terraform/{projectId}/plan:
     get:

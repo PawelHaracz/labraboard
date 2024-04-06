@@ -27,7 +27,6 @@ func NewStateController() (*StateController, error) {
 // @Schemes http
 // @Param projectId path string true "project id"
 // @Description
-// @Tags terraform
 // @Tags state
 // @Accept json
 // @Produce json
@@ -66,7 +65,6 @@ func (c *StateController) GetState(context *gin.Context) {
 // @Schemes http
 // @Param projectId path string true "project id"
 // @Description
-// @Tags terraform
 // @Tags state
 // @Accept json
 // @Produce json
@@ -117,7 +115,6 @@ func (c *StateController) UpdateState(context *gin.Context) {
 // @Schemes http
 // @Param projectId path string true "project id"
 // @Description
-// @Tags terraform
 // @Tags state
 // @Accept json
 // @Produce json
@@ -181,7 +178,6 @@ func (c *StateController) Lock(context *gin.Context) {
 // @Schemes http
 // @Param projectId path string true "project id"
 // @Description
-// @Tags terraform
 // @Tags state
 // @Accept json
 // @Produce json

@@ -86,44 +86,45 @@ func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string, variab
 		}
 	}
 
+	plan := &Plan{
+		Id:   planId,
+		Type: Tofu,
+	}
+
 	p, err := svc.tf.PlanJSON(context.Background(), jsonWriter, planConfig...)
 	//p, err := svc.tf.PlanJSON(context.Background(), jsonWriter)
 	//p, err := svc.tf.Plan(context.Background(), planConfig...)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %v", "error running Plan", err)
+		return plan, fmt.Errorf("%s: %v", "error running Plan", err)
 
 	}
 	if !p {
-		return nil, errors.New("plan is not finish well")
+		return plan, errors.New("plan is not finish well")
 	}
 
 	planJson, err := svc.tf.ShowPlanFile(context.Background(), planPath)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %v", "error running ShowPlanFile", err)
+		return plan, fmt.Errorf("%s: %v", "error running ShowPlanFile", err)
 	}
 
 	jsonPlan, err := json2.Marshal(planJson)
 	if err := jsonWriter.Flush(); err != nil {
-		return nil, errors.New("error running Flush")
+		return plan, errors.New("error running Flush")
 	}
 	r := bytes.NewReader(b.Bytes())
-	plans, err := svc.serializer.SerializeJsonl(r)
+	IacPlans, err := svc.serializer.SerializeJsonl(r)
 	if err != nil {
-		return nil, errors.New("Cannot reade plan")
+		return plan, errors.New("Cannot reade plan")
 	}
 
-	plan, err := aggregates.NewIacPlan(planId, aggregates.Tofu, jsonPlan, nil, nil)
+	iacPlan, err := aggregates.NewIacPlan(planId, aggregates.Tofu, jsonPlan, nil, nil)
 
 	if err != nil {
-		return nil, errors.New("Cannot create aggregate")
+		return plan, errors.New("Cannot create aggregate")
 	}
 
-	plan.AddChanges(plans...)
+	iacPlan.AddChanges(IacPlans...)
+	plan.plan = iacPlan
 
-	return &Plan{
-		//plan: result,
-		Id:   planId,
-		Type: Tofu,
-		plan: plan,
-	}, nil
+	return plan, nil
 }
