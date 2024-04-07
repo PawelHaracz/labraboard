@@ -17,22 +17,24 @@ var (
 )
 
 type IacPlan struct {
-	id uuid.UUID
-	//gitsha        string todo add gitsha
+	id            uuid.UUID
+	HistoryConfig *iacPlans.HistoryProjectConfig
 	changeSummary *iacPlans.ChangeSummaryIacPlan
 	changes       []iacPlans.ChangesIacPlan
 	planType      IaCPlanType
 	planJson      []byte
 }
 
-func NewIacPlan(id uuid.UUID, planType IaCPlanType, plan []byte, summary *iacPlans.ChangeSummaryIacPlan, changes []iacPlans.ChangesIacPlan) (*IacPlan, error) {
+func NewIacPlan(id uuid.UUID, planType IaCPlanType, historyConfig *iacPlans.HistoryProjectConfig) (*IacPlan, error) {
 	return &IacPlan{
 		id:            id,
 		planType:      planType,
-		planJson:      plan,
-		changeSummary: summary,
-		changes:       changes,
+		HistoryConfig: historyConfig,
 	}, nil
+}
+
+func (p *IacPlan) AddPlan(plan []byte) {
+	p.planJson = plan
 }
 
 func newChangeIacPlanner(resourceType string, resourceName string, provider string, action iacPlans.PlanTypeAction) *iacPlans.ChangesIacPlan {

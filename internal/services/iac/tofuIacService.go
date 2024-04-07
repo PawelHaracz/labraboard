@@ -7,14 +7,13 @@ import (
 	json2 "encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	"labraboard/internal/aggregates"
 	"labraboard/internal/entities"
 	"labraboard/internal/helpers"
+	"labraboard/internal/models"
 )
 
 type TofuIacService struct {
@@ -63,7 +62,7 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 	}, nil
 }
 
-func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string, variables []string) (*Plan, error) {
+func (svc *TofuIacService) Plan(envs map[string]string, variables []string) (*models.IacTerraformPlanJson, error) {
 	var b bytes.Buffer
 	var planPath = "plan.tfplan"
 	jsonWriter := bufio.NewWriter(&b)
@@ -86,45 +85,38 @@ func (svc *TofuIacService) Plan(planId uuid.UUID, envs map[string]string, variab
 		}
 	}
 
-	plan := &Plan{
-		Id:   planId,
-		Type: Tofu,
-	}
-
 	p, err := svc.tf.PlanJSON(context.Background(), jsonWriter, planConfig...)
 	//p, err := svc.tf.PlanJSON(context.Background(), jsonWriter)
 	//p, err := svc.tf.Plan(context.Background(), planConfig...)
 	if err != nil {
-		return plan, fmt.Errorf("%s: %v", "error running Plan", err)
+		return nil, fmt.Errorf("%s: %v", "error running Plan", err)
 
 	}
 	if !p {
-		return plan, errors.New("plan is not finish well")
+		return nil, errors.New("plan is not finish well")
 	}
 
 	planJson, err := svc.tf.ShowPlanFile(context.Background(), planPath)
 	if err != nil {
-		return plan, fmt.Errorf("%s: %v", "error running ShowPlanFile", err)
+		return nil, fmt.Errorf("%s: %v", "error running ShowPlanFile", err)
 	}
 
 	jsonPlan, err := json2.Marshal(planJson)
 	if err := jsonWriter.Flush(); err != nil {
-		return plan, errors.New("error running Flush")
+		return nil, errors.New("error running Flush")
 	}
 	r := bytes.NewReader(b.Bytes())
-	IacPlans, err := svc.serializer.SerializeJsonl(r)
+	iacPlanDeserialized, err := svc.serializer.DeserializeJsonl(r)
 	if err != nil {
-		return plan, errors.New("Cannot reade plan")
+		return nil, errors.New("Cannot reade plan")
 	}
 
-	iacPlan, err := aggregates.NewIacPlan(planId, aggregates.Tofu, jsonPlan, nil, nil)
+	planChanges := models.NewIacTerraformPlanJson(jsonPlan, iacPlanDeserialized)
+	//iacPlan, err := aggregates.NewIacPlan(planId, aggregates.Tofu, jsonPlan, nil, nil)
 
 	if err != nil {
-		return plan, errors.New("Cannot create aggregate")
+		return nil, errors.New("Cannot create aggregate")
 	}
 
-	iacPlan.AddChanges(IacPlans...)
-	plan.plan = iacPlan
-
-	return plan, nil
+	return planChanges, nil
 }

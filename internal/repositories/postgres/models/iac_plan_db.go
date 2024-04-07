@@ -12,4 +12,5 @@ type IaCPlanDb struct {
 	Changes       []byte    `gorm:"null,type:jsonb"`
 	PlanType      string    `gorm:"not null"`
 	PlanJson      []byte    `gorm:"null,type:jsonb"`
+	Config        []byte    `gorm:"null,type:jsonb"`
 }

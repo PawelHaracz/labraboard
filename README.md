@@ -33,14 +33,15 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Add postgresql as backend
 - [X] Redis queue
 - [X] Project CRUD
-- [ ] Add repository trigger aggregate and relate with plans
+- [ ] Add reference to git sha in aggregate and relate with plans
 - [ ] Bug fixing e2e testing
+- [ ] Path for parameters in git folder
 - [ ] Time Lease for the state
 - [ ] Handle scheduled plan in TerraformPlanner
 - [ ] Access Token for Backend http
 - [ ] Run plan using http backend
 - [ ] Integrate plan with terraform plan association
-- [ ] Clean solution to more DDD
+- [ ] Clean solution to be more DDD
 - [ ] Handle other version than version 4.0 of tf
 - [ ] Apply Mechanism to handle the state
 - [ ] Integrate with the Git

@@ -15,7 +15,7 @@ func TestIacTerraformPlanJsons(t *testing.T) {
 	defer f.Close()
 
 	serializer := NewSerializer[entities.IacTerraformPlanJson]()
-	iacTerraformPlanJsons, err := serializer.SerializeJsonl(f)
+	iacTerraformPlanJsons, err := serializer.DeserializeJsonl(f)
 	if err != nil {
 		t.Errorf(err.Error())
 	}

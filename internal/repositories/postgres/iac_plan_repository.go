@@ -41,7 +41,7 @@ func (repo *IaCPlanRepository) Map(state *models.IaCPlanDb) (*aggregates.IacPlan
 			return nil, errors.Wrap(err, "can't get plans on iac")
 		}
 	}
-
+	//todo
 	iac, err := aggregates.NewIacPlan(state.ID, aggregates.IaCPlanType(state.PlanType), state.PlanJson, &summary, changes)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create IaC Aggregate")

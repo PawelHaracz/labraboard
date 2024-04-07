@@ -37,13 +37,13 @@ func NewIac(id uuid.UUID, iacType vo.IaCType, plans []*vo.Plans, envs []*vo.IaCE
 	return aggregate, nil
 }
 
-func (c *Iac) AddEnv(name string, value string, hasSecret bool) error {
-	for _, a := range c.envs {
+func (receiver *Iac) AddEnv(name string, value string, hasSecret bool) error {
+	for _, a := range receiver.envs {
 		if a.Name == name {
 			return ErrEnvAlreadyExists
 		}
 	}
-	c.envs = append(c.envs, &vo.IaCEnv{
+	receiver.envs = append(receiver.envs, &vo.IaCEnv{
 		Name:      name,
 		Value:     value,
 		HasSecret: hasSecret,
@@ -51,23 +51,23 @@ func (c *Iac) AddEnv(name string, value string, hasSecret bool) error {
 	return nil
 }
 
-func (c *Iac) AddRepo(url string, defaultBranch string, path string) error {
-	if c.Repo != nil {
+func (receiver *Iac) AddRepo(url string, defaultBranch string, path string) error {
+	if receiver.Repo != nil {
 		return errors.New("repo already exists")
 	}
 	repo, err := vo.NewIaCRepo(url, defaultBranch, path)
-	c.Repo = repo
+	receiver.Repo = repo
 	return err
 }
 
 // GetID returns the Iac root entity ID
-func (c *Iac) GetID() uuid.UUID {
-	return c.id
+func (receiver *Iac) GetID() uuid.UUID {
+	return receiver.id
 }
 
-func (c *Iac) AddPlan(id uuid.UUID) {
+func (receiver *Iac) AddPlan(id uuid.UUID) {
 	utc := time.Now().UTC()
-	c.plans = append(c.plans, &vo.Plans{
+	receiver.plans = append(receiver.plans, &vo.Plans{
 		Status:    vo.Scheduled,
 		ModifyOn:  utc,
 		CreatedOn: utc,
@@ -75,8 +75,8 @@ func (c *Iac) AddPlan(id uuid.UUID) {
 	})
 }
 
-func (c *Iac) GetPlan(id uuid.UUID) (*vo.Plans, error) {
-	for _, plan := range c.plans {
+func (receiver *Iac) GetPlan(id uuid.UUID) (*vo.Plans, error) {
+	for _, plan := range receiver.plans {
 		if plan.Id == id {
 			return plan, nil
 		}
@@ -84,67 +84,67 @@ func (c *Iac) GetPlan(id uuid.UUID) (*vo.Plans, error) {
 	return nil, ErrPlanNotFound
 }
 
-func (c *Iac) GetPlans() []*vo.Plans {
-	return c.plans
+func (receiver *Iac) GetPlans() []*vo.Plans {
+	return receiver.plans
 }
 
-func (c *Iac) UpdatePlan(id uuid.UUID, status vo.PlanStatus) {
-	if plan, err := c.GetPlan(id); err == nil {
+func (receiver *Iac) UpdatePlan(id uuid.UUID, status vo.PlanStatus) {
+	if plan, err := receiver.GetPlan(id); err == nil {
 		utc := time.Now().UTC()
 		plan.Status = status
 		plan.ModifyOn = utc
 	}
 }
 
-func (iac *Iac) GetEnvs() map[string]string {
+func (receiver *Iac) GetEnvs() map[string]string {
 	var envs = map[string]string{}
-	for _, env := range iac.envs {
+	for _, env := range receiver.envs {
 		envs[env.Name] = env.Value
 	}
 	return envs
 }
 
-func (iac *Iac) GetVariables() []string {
+func (receiver *Iac) GetVariables() []string {
 	var variables []string
-	for _, variable := range iac.variables {
+	for _, variable := range receiver.variables {
 		variables = append(variables, fmt.Sprintf("%s=%s", variable.Name, variable.Value))
 	}
 	return variables
 }
 
-func (iac *Iac) SetVariable(name string, value string) error {
-	iac.variables = append(iac.variables, &vo.IaCVariable{
+func (receiver *Iac) SetVariable(name string, value string) error {
+	receiver.variables = append(receiver.variables, &vo.IaCVariable{
 		Name:  name,
 		Value: value,
 	})
 	return nil
 }
 
-func (iac *Iac) Map() (*models.IaCDb, error) {
-	iacRepo, err := json.Marshal(iac.Repo)
+func (receiver *Iac) Map() (*models.IaCDb, error) {
+	iacRepo, err := json.Marshal(receiver.Repo)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "can't create repo on iac")
+		return nil, errors.Wrap(err, "can't create repo on receiver")
 	}
 
-	envs, err := json.Marshal(iac.envs)
+	envs, err := json.Marshal(receiver.envs)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't create envs on iac")
+		return nil, errors.Wrap(err, "can't create envs on receiver")
 	}
 
-	variables, err := json.Marshal(iac.variables)
+	variables, err := json.Marshal(receiver.variables)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't create variables on iac")
+		return nil, errors.Wrap(err, "can't create variables on receiver")
 	}
 
-	plans, err := json.Marshal(iac.plans)
+	plans, err := json.Marshal(receiver.plans)
 	if err != nil {
-		return nil, errors.Wrap(err, "can't create plans on iac")
+		return nil, errors.Wrap(err, "can't create plans on receiver")
 	}
 
 	return &models.IaCDb{
-		ID:        iac.id,
-		IacType:   int(iac.IacType),
+		ID:        receiver.id,
+		IacType:   int(receiver.IacType),
 		Repo:      iacRepo,
 		Envs:      envs,
 		Variables: variables,

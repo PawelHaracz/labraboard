@@ -12,7 +12,7 @@ func NewSerializer[T any]() *Serializer[T] {
 	return &Serializer[T]{}
 }
 
-func (*Serializer[T]) SerializeJsonl(reader io.Reader) ([]T, error) {
+func (*Serializer[T]) DeserializeJsonl(reader io.Reader) ([]T, error) {
 	var jsons []T
 	decoder := json.NewDecoder(reader)
 	for decoder.More() {

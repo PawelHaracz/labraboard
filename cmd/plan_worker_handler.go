@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-git/go-git/v5"
+	"labraboard/internal/aggregates"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
 	"labraboard/internal/repositories"
 	iacSvc "labraboard/internal/services/iac"
 	vo "labraboard/internal/valueobjects"
+	"labraboard/internal/valueobjects/iacPlans"
 	"os"
 )
 
@@ -66,7 +68,8 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 		Progress: os.Stdout,
 	})
 
-	if _, err := gitRepo.Branch(iac.Repo.DefaultBranch); err != nil {
+	branchConfig, err := gitRepo.Branch(iac.Repo.DefaultBranch)
+	if err != nil {
 		panic(err)
 	}
 	defer func(folderPath string) {
@@ -76,9 +79,9 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 		}
 	}(folderPath)
 
-	if err = unitOfWork.IacRepository.Update(iac); err != nil {
-		panic(err)
-	}
+	//if err = unitOfWork.IacRepository.Update(iac); err != nil {
+	//	panic(err)
+	//}
 	if err := createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
 		panic(err)
 	}
@@ -88,15 +91,8 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 		panic(err)
 	}
 
-	plan, err := tofu.Plan(obj.PlanId, iac.GetEnvs(), iac.GetVariables())
+	iacTerraformPlanJson, err := tofu.Plan(iac.GetEnvs(), iac.GetVariables())
 	if err != nil {
-		iac.UpdatePlan(obj.PlanId, vo.Failed)
-		if err = unitOfWork.IacRepository.Update(iac); err != nil {
-			panic(err)
-		}
-	}
-	iac.UpdatePlan(obj.PlanId, vo.Succeed)
-	if err = unitOfWork.IacPlan.Add(plan.GetPlan()); err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		if err = unitOfWork.IacRepository.Update(iac); err != nil {
 			panic(err)
@@ -104,7 +100,25 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 		return
 	}
 
-	iac.UpdatePlan(obj.PlanId, vo.Succeed)
+	historyConfiguration := &iacPlans.HistoryProjectConfig{
+		GitSha:   branchConfig.Remote,
+		GitPath:  iac.Repo.Path,
+		GitUrl:   iac.Repo.Url,
+		Envs:     iac.GetEnvs(),
+		Variable: iac.GetVariables(),
+	}
+
+	plan, err := aggregates.NewIacPlan(obj.PlanId, aggregates.Tofu, historyConfiguration)
+	if err != nil {
+		panic(err) //todo handle it
+	}
+
+	plan.AddPlan(iacTerraformPlanJson.GetPlan())
+	plan.AddChanges(iacTerraformPlanJson.GetChanges()...)
+	iac.UpdatePlan(obj.PlanId, vo.Succeed) //optimistic change :)
+	if err = unitOfWork.IacPlan.Add(plan); err != nil {
+		iac.UpdatePlan(obj.PlanId, vo.Failed)
+	}
 	if err = unitOfWork.IacRepository.Update(iac); err != nil {
 		panic(err)
 	}
