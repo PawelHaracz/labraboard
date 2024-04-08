@@ -1,12 +1,10 @@
 package postgres
 
 import (
-	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/repositories/postgres/models"
-	"labraboard/internal/valueobjects/iacPlans"
 )
 
 type IaCPlanRepository struct {
@@ -29,23 +27,8 @@ func (repo *IaCPlanRepository) Get(id uuid.UUID) (*aggregates.IacPlan, error) {
 }
 
 func (repo *IaCPlanRepository) Map(state *models.IaCPlanDb) (*aggregates.IacPlan, error) {
-	var summary iacPlans.ChangeSummaryIacPlan
-	if state.PlanJson != nil {
-		if err := json.Unmarshal(state.PlanJson, &summary); err != nil {
-			return nil, errors.Wrap(err, "can't get envs on iac")
-		}
-	}
-	var changes []iacPlans.ChangesIacPlan
-	if state.Changes != nil {
-		if err := json.Unmarshal(state.Changes, &changes); err != nil {
-			return nil, errors.Wrap(err, "can't get plans on iac")
-		}
-	}
-	//todo
-	iac, err := aggregates.NewIacPlan(state.ID, aggregates.IaCPlanType(state.PlanType), state.PlanJson, &summary, changes)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't create IaC Aggregate")
-	}
+
+	iac := aggregates.MapIacPlan(state)
 
 	return iac, nil
 }

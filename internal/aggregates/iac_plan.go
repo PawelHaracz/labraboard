@@ -33,6 +33,36 @@ func NewIacPlan(id uuid.UUID, planType IaCPlanType, historyConfig *iacPlans.Hist
 	}, nil
 }
 
+func MapIacPlan(state *models.IaCPlanDb) *IacPlan {
+	var summary *iacPlans.ChangeSummaryIacPlan
+	if state.PlanJson != nil {
+		if err := json.Unmarshal(state.PlanJson, &summary); err != nil {
+			return nil
+		}
+	}
+	var changes []iacPlans.ChangesIacPlan
+	if state.Changes != nil {
+		if err := json.Unmarshal(state.Changes, &changes); err != nil {
+			return nil
+		}
+	}
+	var historyConfig *iacPlans.HistoryProjectConfig
+	if state.ChangeSummary != nil {
+		if err := json.Unmarshal(state.ChangeSummary, &historyConfig); err != nil {
+			return nil
+		}
+	}
+
+	return &IacPlan{
+		id:            state.ID,
+		planType:      IaCPlanType(state.PlanType),
+		HistoryConfig: historyConfig,
+		changeSummary: summary,
+		changes:       changes,
+		planJson:      state.PlanJson,
+	}
+}
+
 func (p *IacPlan) AddPlan(plan []byte) {
 	p.planJson = plan
 }
@@ -105,11 +135,16 @@ func (plan *IacPlan) Map() (*models.IaCPlanDb, error) {
 		return nil, errors.Wrap(err, "can't marshall changes on iac")
 	}
 
+	config, err := json.Marshal(plan.HistoryConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't marshall config on iac")
+	}
 	return &models.IaCPlanDb{
 		ID:            plan.id,
 		ChangeSummary: summary,
 		Changes:       changes,
 		PlanJson:      plan.planJson,
 		PlanType:      string(plan.planType),
+		Config:        config,
 	}, nil
 }

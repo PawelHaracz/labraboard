@@ -33,7 +33,9 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Add postgresql as backend
 - [X] Redis queue
 - [X] Project CRUD
-- [ ] Add reference to git sha in aggregate and relate with plans
+- [x] Add reference to git sha in aggregate and relate with plans
+- [ ] Add mapping to decouple mapping between aggregates and repository
+- [ ] Add unit testing
 - [ ] Bug fixing e2e testing
 - [ ] Path for parameters in git folder
 - [ ] Time Lease for the state
