@@ -4,16 +4,19 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
+	"labraboard/internal/mappers"
 	"labraboard/internal/repositories/postgres/models"
 )
 
 type TerraformStateRepository struct {
 	database *Database
+	mapper   mappers.Mapper[*models.TerraformStateDb, *aggregates.TerraformState]
 }
 
 func NewTerraformStateRepository(database *Database) (*TerraformStateRepository, error) {
 	return &TerraformStateRepository{
 		database: database,
+		mapper:   mappers.TerraformStatenMapper[*models.TerraformStateDb, *aggregates.TerraformState]{},
 	}, nil
 }
 
@@ -22,17 +25,23 @@ func (repo *TerraformStateRepository) Get(id uuid.UUID) (*aggregates.TerraformSt
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get state")
 	}
-	return aggregates.NewTerraformState(state.ID, state.State, state.CreatedOn, state.ModifyOn, state.Lock)
+	return repo.mapper.Map(state)
+	//return aggregates.NewTerraformState(state.ID, state.State, state.CreatedOn, state.ModifyOn, state.Lock)
 }
 
 func (repo *TerraformStateRepository) Add(state *aggregates.TerraformState) error {
-	result := repo.database.GormDB.Create(&models.TerraformStateDb{
-		ID:        state.GetID(),
-		State:     state.GetByteState(),
-		CreatedOn: state.CreatedOn,
-		ModifyOn:  state.ModifyOn,
-		Lock:      state.GetByteLock(),
-	})
+	model, err := repo.mapper.RevertMap(state)
+	if err != nil {
+		return errors.Wrap(err, "can't map state")
+	}
+	result := repo.database.GormDB.Create(model)
+	//result := repo.database.GormDB.Create(&models.TerraformStateDb{
+	//	ID:        state.GetID(),
+	//	State:     state.GetByteState(),
+	//	CreatedOn: state.CreatedOn,
+	//	ModifyOn:  state.ModifyOn,
+	//	Lock:      state.GetByteLock(),
+	//})
 	return result.Error
 }
 
@@ -54,7 +63,7 @@ func (repo *TerraformStateRepository) GetAll() []*aggregates.TerraformState {
 	repo.database.GormDB.Find(&dbs)
 	states := make([]*aggregates.TerraformState, len(dbs))
 	for _, state := range dbs {
-		p, err := aggregates.NewTerraformState(state.ID, state.State, state.CreatedOn, state.ModifyOn, state.Lock)
+		p, err := repo.mapper.Map(state)
 		if err != nil {
 			//handle it
 			continue

@@ -1,21 +1,24 @@
 package postgres
 
 import (
-	"encoding/json"
+	_ "encoding/json"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
+	"labraboard/internal/mappers"
 	"labraboard/internal/repositories/postgres/models"
-	vo "labraboard/internal/valueobjects"
+	_ "labraboard/internal/valueobjects"
 )
 
 type IaCRepository struct {
 	database *Database
+	mapper   mappers.Mapper[*models.IaCDb, *aggregates.Iac]
 }
 
 func NewIaCRepository(database *Database) (*IaCRepository, error) {
 	return &IaCRepository{
 		database: database,
+		mapper:   mappers.IacMapper[*models.IaCDb, *aggregates.Iac]{},
 	}, nil
 }
 
@@ -29,42 +32,43 @@ func (repo *IaCRepository) Get(id uuid.UUID) (*aggregates.Iac, error) {
 }
 
 func (repo *IaCRepository) Map(state *models.IaCDb) (*aggregates.Iac, error) {
-	var envs []*vo.IaCEnv
-	if state.Envs != nil {
-		if err := json.Unmarshal(state.Envs, &envs); err != nil {
-			return nil, errors.Wrap(err, "can't get envs on iac")
-		}
-	}
-	var plans []*vo.Plans
-	if state.Plans != nil {
-		if err := json.Unmarshal(state.Plans, &plans); err != nil {
-			return nil, errors.Wrap(err, "can't get plans on iac")
-		}
-	}
-	var variables []*vo.IaCVariable
-	if state.Variables != nil {
-		if err := json.Unmarshal(state.Variables, &variables); err != nil {
-			return nil, errors.Wrap(err, "can't get variables on iac")
-		}
-	}
-
-	var iacRepo *vo.IaCRepo
-	if state.Repo != nil {
-		if err := json.Unmarshal(state.Repo, &iacRepo); err != nil {
-			return nil, errors.Wrap(err, "can't get repo on iac")
-		}
-	}
-
-	iac, err := aggregates.NewIac(state.ID, vo.IaCType(state.IacType), plans, envs, iacRepo, variables)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't create IaC Aggregate")
-	}
-
-	return iac, nil
+	return repo.mapper.Map(state)
+	//var envs []*vo.IaCEnv
+	//if state.Envs != nil {
+	//	if err := json.Unmarshal(state.Envs, &envs); err != nil {
+	//		return nil, errors.Wrap(err, "can't get envs on iac")
+	//	}
+	//}
+	//var plans []*vo.Plans
+	//if state.Plans != nil {
+	//	if err := json.Unmarshal(state.Plans, &plans); err != nil {
+	//		return nil, errors.Wrap(err, "can't get plans on iac")
+	//	}
+	//}
+	//var variables []*vo.IaCVariable
+	//if state.Variables != nil {
+	//	if err := json.Unmarshal(state.Variables, &variables); err != nil {
+	//		return nil, errors.Wrap(err, "can't get variables on iac")
+	//	}
+	//}
+	//
+	//var iacRepo *vo.IaCRepo
+	//if state.Repo != nil {
+	//	if err := json.Unmarshal(state.Repo, &iacRepo); err != nil {
+	//		return nil, errors.Wrap(err, "can't get repo on iac")
+	//	}
+	//}
+	//
+	//iac, err := aggregates.NewIac(state.ID, vo.IaCType(state.IacType), plans, envs, iacRepo, variables)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "can't create IaC Aggregate")
+	//}
+	//
+	//return iac, nil
 }
 
 func (repo *IaCRepository) Add(iac *aggregates.Iac) error {
-	i, err := iac.Map()
+	i, err := repo.mapper.RevertMap(iac)
 	if err != nil {
 		return errors.Wrap(err, "can't map IaC")
 	}
@@ -73,7 +77,7 @@ func (repo *IaCRepository) Add(iac *aggregates.Iac) error {
 }
 
 func (repo *IaCRepository) Update(iac *aggregates.Iac) error {
-	i, err := iac.Map()
+	i, err := repo.mapper.RevertMap(iac)
 	if err != nil {
 		return errors.Wrap(err, "can't map IaC")
 	}
