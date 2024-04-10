@@ -1,11 +1,8 @@
 package aggregates
 
 import (
-	"encoding/json"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"labraboard/internal/entities"
-	"labraboard/internal/repositories/postgres/models"
 	"labraboard/internal/valueobjects/iacPlans"
 )
 
@@ -33,34 +30,15 @@ func NewIacPlan(id uuid.UUID, planType IaCPlanType, historyConfig *iacPlans.Hist
 	}, nil
 }
 
-func MapIacPlan(state *models.IaCPlanDb) *IacPlan {
-	var summary *iacPlans.ChangeSummaryIacPlan
-	if state.PlanJson != nil {
-		if err := json.Unmarshal(state.PlanJson, &summary); err != nil {
-			return nil
-		}
-	}
-	var changes []iacPlans.ChangesIacPlan
-	if state.Changes != nil {
-		if err := json.Unmarshal(state.Changes, &changes); err != nil {
-			return nil
-		}
-	}
-	var historyConfig *iacPlans.HistoryProjectConfig
-	if state.ChangeSummary != nil {
-		if err := json.Unmarshal(state.ChangeSummary, &historyConfig); err != nil {
-			return nil
-		}
-	}
-
+func NewIacPlanExplicit(id uuid.UUID, planType IaCPlanType, config *iacPlans.HistoryProjectConfig, summary *iacPlans.ChangeSummaryIacPlan, changes []iacPlans.ChangesIacPlan, planJson []byte) (*IacPlan, error) {
 	return &IacPlan{
-		id:            state.ID,
-		planType:      IaCPlanType(state.PlanType),
-		HistoryConfig: historyConfig,
+		id:            id,
+		planType:      planType,
+		HistoryConfig: config,
 		changeSummary: summary,
 		changes:       changes,
-		planJson:      state.PlanJson,
-	}
+		planJson:      planJson,
+	}, nil
 }
 
 func (p *IacPlan) AddPlan(plan []byte) {
@@ -121,30 +99,6 @@ func (plan *IacPlan) GetPlanJson() string {
 	return string(plan.planJson)
 }
 
-func (plan *IacPlan) Map() (*models.IaCPlanDb, error) {
-	if plan == nil {
-		return nil, errors.New("can't map nil IaC")
-	}
-	changes, err := json.Marshal(plan.changes)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't marshall changes on iac")
-	}
-
-	summary, err := json.Marshal(plan.changeSummary)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't marshall changes on iac")
-	}
-
-	config, err := json.Marshal(plan.HistoryConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't marshall config on iac")
-	}
-	return &models.IaCPlanDb{
-		ID:            plan.id,
-		ChangeSummary: summary,
-		Changes:       changes,
-		PlanJson:      plan.planJson,
-		PlanType:      string(plan.planType),
-		Config:        config,
-	}, nil
+func (plan *IacPlan) Composite() (planJson []byte, planType IaCPlanType, changes []iacPlans.ChangesIacPlan, summary iacPlans.ChangeSummaryIacPlan) {
+	return plan.planJson, plan.planType, plan.changes, *plan.changeSummary
 }

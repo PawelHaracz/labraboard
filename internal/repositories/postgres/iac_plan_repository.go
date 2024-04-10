@@ -39,7 +39,7 @@ func (repo *IaCPlanRepository) Map(state *models.IaCPlanDb) (*aggregates.IacPlan
 func (repo *IaCPlanRepository) Add(iac *aggregates.IacPlan) error {
 	i, err := repo.mapper.RevertMap(iac)
 	if err != nil {
-		return errors.Wrap(err, "can't map IaC")
+		return errors.Wrap(err, "can't map IaC Plan")
 	}
 	result := repo.database.GormDB.Create(i)
 	return result.Error

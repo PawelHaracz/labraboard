@@ -1,11 +1,9 @@
 package aggregates
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"labraboard/internal/repositories/postgres/models"
 	vo "labraboard/internal/valueobjects"
 	_ "slices"
 	"time"
@@ -120,34 +118,6 @@ func (receiver *Iac) SetVariable(name string, value string) error {
 	return nil
 }
 
-func (receiver *Iac) Map() (*models.IaCDb, error) {
-	iacRepo, err := json.Marshal(receiver.Repo)
-
-	if err != nil {
-		return nil, errors.Wrap(err, "can't create repo on receiver")
-	}
-
-	envs, err := json.Marshal(receiver.envs)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't create envs on receiver")
-	}
-
-	variables, err := json.Marshal(receiver.variables)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't create variables on receiver")
-	}
-
-	plans, err := json.Marshal(receiver.plans)
-	if err != nil {
-		return nil, errors.Wrap(err, "can't create plans on receiver")
-	}
-
-	return &models.IaCDb{
-		ID:        receiver.id,
-		IacType:   int(receiver.IacType),
-		Repo:      iacRepo,
-		Envs:      envs,
-		Variables: variables,
-		Plans:     plans,
-	}, nil
+func (receiver *Iac) Composite() ([]*vo.IaCEnv, []*vo.IaCVariable) {
+	return receiver.envs, receiver.variables
 }

@@ -35,13 +35,6 @@ func (repo *TerraformStateRepository) Add(state *aggregates.TerraformState) erro
 		return errors.Wrap(err, "can't map state")
 	}
 	result := repo.database.GormDB.Create(model)
-	//result := repo.database.GormDB.Create(&models.TerraformStateDb{
-	//	ID:        state.GetID(),
-	//	State:     state.GetByteState(),
-	//	CreatedOn: state.CreatedOn,
-	//	ModifyOn:  state.ModifyOn,
-	//	Lock:      state.GetByteLock(),
-	//})
 	return result.Error
 }
 
