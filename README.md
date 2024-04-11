@@ -34,7 +34,7 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Redis queue
 - [X] Project CRUD
 - [x] Add reference to git sha in aggregate and relate with plans
-- [ ] Add mapping to decouple mapping between aggregates and repository
+- [x] Add mapping to decouple mapping between aggregates and repository
 - [ ] Add unit testing
 - [ ] Bug fixing e2e testing
 - [ ] Path for parameters in git folder

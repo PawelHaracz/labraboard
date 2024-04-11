@@ -31,7 +31,7 @@ func NewIacService(configs ...IacConfiguration) (*IacService, error) {
 		return nil, errors.New("publisher is not set")
 	}
 	if is.unitOfWork == nil {
-		return nil, errors.New("repositories is not set")
+		return nil, errors.New("Unit of Work is not set")
 	}
 
 	return is, nil
