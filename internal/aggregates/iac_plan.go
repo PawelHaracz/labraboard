@@ -100,5 +100,12 @@ func (plan *IacPlan) GetPlanJson() string {
 }
 
 func (plan *IacPlan) Composite() (planJson []byte, planType IaCPlanType, changes []iacPlans.ChangesIacPlan, summary iacPlans.ChangeSummaryIacPlan) {
+	if plan.changeSummary == nil {
+		return plan.planJson, plan.planType, plan.changes, iacPlans.ChangeSummaryIacPlan{Add: 0, Change: 0, Remove: 0}
+	}
 	return plan.planJson, plan.planType, plan.changes, *plan.changeSummary
+}
+
+func (p *IacPlan) GetPlanType() string {
+	return string(p.planType)
 }
