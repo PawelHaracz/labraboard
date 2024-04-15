@@ -60,5 +60,4 @@ func TestPlanTriggerHandler(t *testing.T) {
 	if planJson == "" {
 		t.Errorf("Plan Json not set")
 	}
-
 }

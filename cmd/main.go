@@ -65,5 +65,5 @@ func ConfigRuntime() {
 }
 
 func ConfigureWorkers(subscriber eb.EventSubscriber, uow *repositories.UnitOfWork) {
-	handlePlan(subscriber, uow)
+	HandlePlan(subscriber, uow)
 }

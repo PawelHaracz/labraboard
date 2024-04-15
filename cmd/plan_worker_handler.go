@@ -15,7 +15,7 @@ import (
 	"os"
 )
 
-func handlePlan(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) {
+func HandlePlan(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) {
 	pl := eventSubscriber.Subscribe(eb.TRIGGERED_PLAN, context.Background())
 	go func(repository *repositories.UnitOfWork) {
 		for msg := range pl {

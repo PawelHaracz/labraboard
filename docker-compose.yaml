@@ -23,7 +23,6 @@ services:
     container_name: labraboard
     build:
       context: ./
-      target: production
     image: labraboard
     depends_on:
       - db
