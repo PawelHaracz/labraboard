@@ -9,6 +9,7 @@ import (
 	"labraboard"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/redis"
+	"labraboard/internal/handlers"
 	"labraboard/internal/repositories"
 	"labraboard/internal/repositories/postgres"
 	"labraboard/internal/routers"
@@ -65,5 +66,5 @@ func ConfigRuntime() {
 }
 
 func ConfigureWorkers(subscriber eb.EventSubscriber, uow *repositories.UnitOfWork) {
-	HandlePlan(subscriber, uow)
+	handlers.HandlePlan(subscriber, uow)
 }

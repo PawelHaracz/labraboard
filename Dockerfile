@@ -16,7 +16,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build /app/build/cmd/main.go
 FROM alpine:edge
 WORKDIR /app
 
-COPY --from=build /app/build/plan_worker_handler ./
 COPY --from=build /app/build/main ./
 # Set the timezone and install CA certificates
 RUN apk --no-cache add ca-certificates tzdata
