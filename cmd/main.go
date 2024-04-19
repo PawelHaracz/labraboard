@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/pkg/errors"
 	"labraboard"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/redis"
@@ -23,12 +24,12 @@ func main() {
 	if *configFile == "" {
 		err := cleanenv.ReadEnv(&cfg)
 		if err != nil {
-			panic("cannot read config file")
+			panic(errors.Wrap(err, "cannot read config file"))
 		}
 	} else {
 		err := cleanenv.ReadConfig(*configFile, &cfg)
 		if err != nil {
-			panic("cannot read config file")
+			panic(errors.Wrap(err, "cannot read config file"))
 		}
 	}
 	ConfigRuntime()

@@ -48,6 +48,10 @@ func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.Unit
 			project.GET("/", iacController.GetProjects)
 			project.POST("/", iacController.CreateProject)
 			project.GET("/:projectId", iacController.GetProject)
+			project.PUT("/:projectId/env", iacController.AddEnv)
+			project.DELETE("/:projectId/env/:envName", iacController.RemoveEnv)
+			project.PUT("/:projectId/variable", iacController.AddVariable)
+			project.DELETE("/:projectId/variable/:variableName", iacController.RemoveVariable)
 		}
 		state := v1.Group("/state/terraform")
 		{

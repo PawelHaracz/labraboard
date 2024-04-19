@@ -18,8 +18,9 @@ type GetProjectBaseDto struct {
 
 type GetProjectDto struct {
 	GetProjectBaseDto
-	RepositoryUrl    string                   `json:"repositoryUrl"`
-	RepositoryBranch string                   `json:"repositoryBranch:"`
-	TerraformPath    string                   `json:"repositoryTerraformPath"`
-	Envs             []map[string]interface{} `json:"envs"`
+	RepositoryUrl    string            `json:"repositoryUrl"`
+	RepositoryBranch string            `json:"repositoryBranch:"`
+	TerraformPath    string            `json:"repositoryTerraformPath"`
+	Envs             map[string]string `json:"envs"`
+	Variables        map[string]string `json:"variables"`
 }

@@ -35,8 +35,11 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Project CRUD
 - [x] Add reference to git sha in aggregate and relate with plans
 - [x] Add mapping to decouple mapping between aggregates and repository
-- [ ] Add unit testing
-- [ ] Bug fixing e2e testing
+- [X] Add and remove env variables
+- [X] Add and remove  variables
+- [ ] Fix handling returning changes from plan
+- [ ] ~~Add unit testing~~
+- [ ] ~~Bug fixing e2e testing~~
 - [ ] Path for parameters in git folder
 - [ ] Time Lease for the state
 - [ ] Handle scheduled plan in TerraformPlanner

@@ -91,7 +91,7 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 		panic(err)
 	}
 
-	iacTerraformPlanJson, err := tofu.Plan(iac.GetEnvs(), iac.GetVariables())
+	iacTerraformPlanJson, err := tofu.Plan(iac.GetEnvs(false), iac.GetVariables())
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		if err = unitOfWork.IacRepository.Update(iac); err != nil {
@@ -104,7 +104,7 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 		GitSha:   branchConfig.Remote,
 		GitPath:  iac.Repo.Path,
 		GitUrl:   iac.Repo.Url,
-		Envs:     iac.GetEnvs(),
+		Envs:     iac.GetEnvs(true),
 		Variable: iac.GetVariables(),
 	}
 

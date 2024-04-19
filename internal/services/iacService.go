@@ -143,3 +143,55 @@ func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID) (*dtos.Pla
 	}
 	return result, nil
 }
+
+func (svc *IacService) AddEnv(projectId uuid.UUID, name string, value string, isSecret bool) error {
+	iac, err := svc.GetProject(projectId)
+	if err != nil {
+		return err
+	}
+
+	if err = iac.AddEnv(name, value, isSecret); err != nil {
+		return err
+	}
+
+	return svc.unitOfWork.IacRepository.Update(iac)
+}
+
+func (svc *IacService) RemoveEnv(projectId uuid.UUID, name string) error {
+	iac, err := svc.GetProject(projectId)
+	if err != nil {
+		return err
+	}
+
+	if err = iac.RemoveEnv(name); err != nil {
+		return err
+	}
+
+	return svc.unitOfWork.IacRepository.Update(iac)
+}
+
+func (svc *IacService) AddVariable(projectId uuid.UUID, name string, value string) error {
+	iac, err := svc.GetProject(projectId)
+	if err != nil {
+		return err
+	}
+
+	if err = iac.SetVariable(name, value); err != nil {
+		return err
+	}
+
+	return svc.unitOfWork.IacRepository.Update(iac)
+}
+
+func (svc *IacService) RemoveVariable(projectId uuid.UUID, name string) error {
+	iac, err := svc.GetProject(projectId)
+	if err != nil {
+		return err
+	}
+
+	if err = iac.RemoveVariable(name); err != nil {
+		return err
+	}
+
+	return svc.unitOfWork.IacRepository.Update(iac)
+}

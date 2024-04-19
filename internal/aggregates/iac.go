@@ -94,10 +94,14 @@ func (receiver *Iac) UpdatePlan(id uuid.UUID, status vo.PlanStatus) {
 	}
 }
 
-func (receiver *Iac) GetEnvs() map[string]string {
+func (receiver *Iac) GetEnvs(hideSecret bool) map[string]string {
 	var envs = map[string]string{}
 	for _, env := range receiver.envs {
-		envs[env.Name] = env.Value
+		if hideSecret && env.HasSecret {
+			envs[env.Name] = "***"
+		} else {
+			envs[env.Name] = env.Value
+		}
 	}
 	return envs
 }
@@ -106,6 +110,14 @@ func (receiver *Iac) GetVariables() []string {
 	var variables []string
 	for _, variable := range receiver.variables {
 		variables = append(variables, fmt.Sprintf("%s=%s", variable.Name, variable.Value))
+	}
+	return variables
+}
+
+func (receiver *Iac) GetVariableMap() map[string]string {
+	var variables = map[string]string{}
+	for _, variable := range receiver.variables {
+		variables[variable.Name] = variable.Value
 	}
 	return variables
 }
@@ -120,4 +132,24 @@ func (receiver *Iac) SetVariable(name string, value string) error {
 
 func (receiver *Iac) Composite() ([]*vo.IaCEnv, []*vo.IaCVariable) {
 	return receiver.envs, receiver.variables
+}
+
+func (receiver *Iac) RemoveEnv(name string) error {
+	for index, env := range receiver.envs {
+		if env.Name == name {
+			receiver.envs = append(receiver.envs[:index], receiver.envs[index+1:]...)
+			return nil
+		}
+	}
+	return errors.New(fmt.Sprintf("env %s not found", name))
+}
+
+func (receiver *Iac) RemoveVariable(name string) error {
+	for index, variable := range receiver.variables {
+		if variable.Name == name {
+			receiver.variables = append(receiver.variables[:index], receiver.variables[index+1:]...)
+			return nil
+		}
+	}
+	return errors.New(fmt.Sprintf("variable %s not found", name))
 }

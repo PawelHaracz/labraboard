@@ -1,4 +1,20 @@
 definitions:
+  dtos.AddEnvDto:
+    properties:
+      isSecret:
+        type: boolean
+      name:
+        type: string
+      value:
+        type: string
+    type: object
+  dtos.AddVariableDto:
+    properties:
+      name:
+        type: string
+      value:
+        type: string
+    type: object
   dtos.CreateProjectDto:
     properties:
       'repositoryBranch:':
@@ -20,10 +36,9 @@ definitions:
   dtos.GetProjectDto:
     properties:
       envs:
-        items:
-          additionalProperties: true
-          type: object
-        type: array
+        additionalProperties:
+          type: string
+        type: object
       id:
         type: string
       'repositoryBranch:':
@@ -34,6 +49,10 @@ definitions:
         type: string
       type:
         type: integer
+      variables:
+        additionalProperties:
+          type: string
+        type: object
     type: object
   dtos.PlanDto:
     properties:
@@ -129,6 +148,112 @@ paths:
           schema:
             $ref: '#/definitions/dtos.GetProjectDto'
       summary: Fetch a project by id
+      tags:
+      - project
+  /project/{projectId}/env:
+    put:
+      consumes:
+      - application/json
+      description: Add new env to a project
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Env to add
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddEnvDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Add new env to a project
+      tags:
+      - project
+  /project/{projectId}/env/{envName}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove new env to a project
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: env name
+        in: path
+        name: envName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Remove new env to a project
+      tags:
+      - project
+  /project/{projectId}/variable:
+    put:
+      consumes:
+      - application/json
+      description: Add new variable to a project
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Env to add
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddVariableDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Add new variable to a project
+      tags:
+      - project
+  /project/{projectId}/variable/{variableName}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove new variable to a project
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: variable name
+        in: path
+        name: variableName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Remove new variable to a project
       tags:
       - project
   /state/terraform/{projectId}:

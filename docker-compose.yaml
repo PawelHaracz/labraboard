@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   db:
     image: postgres:15-alpine3.19
@@ -20,24 +19,18 @@ services:
     volumes:
       - cache:/data
   api:
-    container_name: labraboard
     build:
       context: ./
-    image: labraboard
     depends_on:
       - db
       - cache
     ports:
       - 8080:8080
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: postgres
       REDIS_HOST: cache
       REDIS_PORT: 6379
       REDIS_PASSWORD: eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+      CONNECTION_STRING:  host=localhost port=5432 user=postgres dbname=labraboard password=postgres
     links:
       - db
       - cache
