@@ -30,7 +30,7 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Http Backend (Get Put)
 - [X] Handle Locks on the state 
 - [X] Handle Destroy
-- [X] Add postgresql as backend
+- [X] Add PostgreSQL as backend
 - [X] Redis queue
 - [X] Project CRUD
 - [x] Add reference to git sha in aggregate and relate with plans
