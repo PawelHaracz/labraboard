@@ -37,7 +37,7 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [x] Add mapping to decouple mapping between aggregates and repository
 - [X] Add and remove env variables
 - [X] Add and remove  variables
-- [ ] Fix handling returning changes from plan
+- [X] Fix handling returning changes from plan
 - [ ] ~~Add unit testing~~
 - [ ] ~~Bug fixing e2e testing~~
 - [ ] Path for parameters in git folder

@@ -13,6 +13,11 @@ var (
 	Tofu      IaCPlanType = "tofu"
 )
 
+var (
+	emptyPlanChange    = entities.IacTerraformPlanChangeJson{}
+	emptySummaryChange = entities.IacTerraformPlanSummaryChangesJson{}
+)
+
 type IacPlan struct {
 	id            uuid.UUID
 	HistoryConfig *iacPlans.HistoryProjectConfig
@@ -74,8 +79,10 @@ func (plan *IacPlan) AddChanges(plans ...entities.IacTerraformPlanJson) {
 		if p.Type == entities.Version {
 			continue
 		}
-		if p.Change == nil {
-			if p.SummaryChanges == nil {
+
+		if p.Change == emptyPlanChange {
+
+			if p.SummaryChanges == emptySummaryChange {
 				continue
 			}
 			summary := newChangeSummaryIacPlan(p.SummaryChanges.Add, p.SummaryChanges.Change, p.SummaryChanges.Remove)
@@ -85,7 +92,6 @@ func (plan *IacPlan) AddChanges(plans ...entities.IacTerraformPlanJson) {
 			planner := newChangeIacPlanner(p.Change.Resource.ResourceType, p.Change.Resource.ResourceName, p.Change.Resource.Provider, iacPlans.PlanTypeAction(p.Change.Action))
 			changes = append(changes, *planner)
 		}
-
 	}
 
 	plan.changes = changes

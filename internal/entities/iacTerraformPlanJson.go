@@ -13,12 +13,12 @@ var (
 )
 
 type IacTerraformPlanJson struct {
-	Message        string                              `json:"@message"`
-	Module         string                              `json:"@module"`
-	Timestamp      time.Time                           `json:"@timestamp"`
-	Type           IacPlatformPlanType                 `json:"type"`
-	Change         *IacTerraformPlanChangeJson         `json:"change"`
-	SummaryChanges *IacTerraformPlanSummaryChangesJson `json:"changes"`
+	Message        string                             `json:"@message"`
+	Module         string                             `json:"@module"`
+	Timestamp      time.Time                          `json:"@timestamp"`
+	Type           IacPlatformPlanType                `json:"type"`
+	Change         IacTerraformPlanChangeJson         `json:"change"`
+	SummaryChanges IacTerraformPlanSummaryChangesJson `json:"changes"`
 }
 
 type IacTerraformPlanChangeJson struct {

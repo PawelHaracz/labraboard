@@ -12,26 +12,26 @@ type IacPlanMapper[TDao *models.IaCPlanDb, T *aggregates.IacPlan] struct {
 }
 
 func (i IacPlanMapper[TDao, T]) Map(dao *models.IaCPlanDb) (*aggregates.IacPlan, error) {
-	var summary *iacPlans.ChangeSummaryIacPlan
-	if dao.PlanJson != nil {
-		if err := json.Unmarshal(dao.PlanJson, &summary); err != nil {
-			return nil, errors.Wrap(err, "can't unmarshal history config")
-		}
-	}
 	var changes []iacPlans.ChangesIacPlan
 	if dao.Changes != nil {
 		if err := json.Unmarshal(dao.Changes, &changes); err != nil {
 			return nil, errors.Wrap(err, "can't unmarshal history config")
 		}
 	}
-	var historyConfig *iacPlans.HistoryProjectConfig
+	var summary *iacPlans.ChangeSummaryIacPlan
 	if dao.ChangeSummary != nil {
-		if err := json.Unmarshal(dao.ChangeSummary, &historyConfig); err != nil {
+		if err := json.Unmarshal(dao.ChangeSummary, &summary); err != nil {
+			return nil, errors.Wrap(err, "can't unmarshal change summary")
+		}
+	}
+
+	var historyConfig *iacPlans.HistoryProjectConfig
+	if dao.Config != nil {
+		if err := json.Unmarshal(dao.Config, &historyConfig); err != nil {
 			return nil, errors.Wrap(err, "can't unmarshal history config")
 		}
 	}
 	return aggregates.NewIacPlanExplicit(dao.ID, aggregates.IaCPlanType(dao.PlanType), historyConfig, summary, changes, dao.PlanJson)
-
 }
 
 func (i IacPlanMapper[TDao, T]) RevertMap(aggregate *aggregates.IacPlan) (*models.IaCPlanDb, error) {

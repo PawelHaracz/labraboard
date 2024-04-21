@@ -18,5 +18,9 @@ func (p *IacTerraformPlanJson) GetPlan() []byte {
 	return p.plan
 }
 func (p *IacTerraformPlanJson) GetChanges() []entities.IacTerraformPlanJson {
-	return p.changes
+	var value = make([]entities.IacTerraformPlanJson, len(p.changes))
+	for i, v := range p.changes {
+		value[i] = v
+	}
+	return value
 }
