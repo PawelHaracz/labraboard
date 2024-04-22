@@ -106,6 +106,7 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string) (*mo
 		return nil, errors.New("error running Flush")
 	}
 	r := bytes.NewReader(b.Bytes())
+	//todo move this 6 lines as a separate aggregate
 	iacPlanDeserialized, err := svc.serializer.DeserializeJsonl(r)
 	if err != nil {
 		return nil, errors.New("Cannot reade plan")
@@ -114,9 +115,9 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string) (*mo
 	planChanges := models.NewIacTerraformPlanJson(jsonPlan, iacPlanDeserialized)
 	//iacPlan, err := aggregates.NewIacPlan(planId, aggregates.Tofu, jsonPlan, nil, nil)
 
-	if err != nil {
-		return nil, errors.New("Cannot create aggregate")
-	}
+	//if err != nil {
+	//	return nil, errors.New("Cannot create aggregate")
+	//}
 
 	return planChanges, nil
 }

@@ -12,6 +12,7 @@ type PlanStatus string
 
 const (
 	Terraform IaCType = iota
+	Tofu      IaCType = iota
 )
 
 const (

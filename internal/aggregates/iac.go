@@ -20,7 +20,7 @@ type Iac struct {
 	plans     []*vo.Plans
 	IacType   vo.IaCType
 	envs      []*vo.IaCEnv
-	Repo      *vo.IaCRepo
+	repo      *vo.IaCRepo
 	variables []*vo.IaCVariable
 }
 
@@ -30,7 +30,7 @@ func NewIac(id uuid.UUID, iacType vo.IaCType, plans []*vo.Plans, envs []*vo.IaCE
 	aggregate.plans = plans
 	aggregate.envs = envs
 	aggregate.IacType = iacType
-	aggregate.Repo = repo
+	aggregate.repo = repo
 	aggregate.variables = variables
 	return aggregate, nil
 }
@@ -50,12 +50,16 @@ func (receiver *Iac) AddEnv(name string, value string, hasSecret bool) error {
 }
 
 func (receiver *Iac) AddRepo(url string, defaultBranch string, path string) error {
-	if receiver.Repo != nil {
+	if receiver.repo != nil {
 		return errors.New("repo already exists")
 	}
 	repo, err := vo.NewIaCRepo(url, defaultBranch, path)
-	receiver.Repo = repo
+	receiver.repo = repo
 	return err
+}
+
+func (receiver *Iac) GetRepo() (Url string, DefaultBranch string, Path string) {
+	return receiver.repo.Url, receiver.repo.DefaultBranch, receiver.repo.Path
 }
 
 // GetID returns the Iac root entity ID
@@ -130,8 +134,8 @@ func (receiver *Iac) SetVariable(name string, value string) error {
 	return nil
 }
 
-func (receiver *Iac) Composite() ([]*vo.IaCEnv, []*vo.IaCVariable) {
-	return receiver.envs, receiver.variables
+func (receiver *Iac) Composite() ([]*vo.IaCEnv, []*vo.IaCVariable, *vo.IaCRepo) {
+	return receiver.envs, receiver.variables, receiver.repo
 }
 
 func (receiver *Iac) RemoveEnv(name string) error {

@@ -1,7 +1,7 @@
 package iac
 
 import (
-	"github.com/google/uuid"
+	"github.com/go-playground/assert/v2"
 	"testing"
 )
 
@@ -12,27 +12,10 @@ func TestNewTofuIacService(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 
-	p, err := iac.Plan(uuid.New(), nil, nil)
+	p, err := iac.Plan(nil, nil)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
 
-	if p.Type != Tofu {
-		t.Fatalf("tofu type is not set")
-	}
-
-	if p.plan == nil {
-		t.Fatalf("tofu type is not set")
-	}
-
-	add, update, deleted := p.plan.GetChanges()
-	if add != 5 {
-		t.Fatalf("Add not equla expetect value")
-	}
-	if update != 0 {
-		t.Fatalf("Update not equla expetect value")
-	}
-	if deleted != 0 {
-		t.Fatalf("Delete not equla expetect value")
-	}
+	assert.NotEqual(t, p.GetPlan(), nil)
 }

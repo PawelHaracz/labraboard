@@ -47,8 +47,8 @@ func (i IacMapper[TDao, T]) Map(dao *models.IaCDb) (*aggregates.Iac, error) {
 }
 
 func (i IacMapper[TDao, T]) RevertMap(aggregate *aggregates.Iac) (*models.IaCDb, error) {
-	iacEnvs, iacVariables := aggregate.Composite()
-	iacRepo, err := json.Marshal(aggregate.Repo)
+	iacEnvs, iacVariables, repo := aggregate.Composite()
+	iacRepo, err := json.Marshal(repo)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create repo on receiver")

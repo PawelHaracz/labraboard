@@ -68,15 +68,18 @@ func (iac *IacController) GetProject(context *gin.Context) {
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "cannot retrieve project"})
 		return
 	}
+
+	url, branch, path := project.GetRepo()
+
 	base := &dtos.GetProjectBaseDto{
 		IacType: int(project.IacType),
 		Id:      project.GetID(),
 	}
 	dto := &dtos.GetProjectDto{
 		GetProjectBaseDto: *base,
-		RepositoryUrl:     project.Repo.Url,
-		RepositoryBranch:  project.Repo.DefaultBranch,
-		TerraformPath:     project.Repo.Path,
+		RepositoryUrl:     url,
+		RepositoryBranch:  branch,
+		TerraformPath:     path,
 		Envs:              project.GetEnvs(true),
 		Variables:         project.GetVariableMap(),
 	}

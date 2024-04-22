@@ -56,19 +56,20 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 	if err != nil {
 		panic(err)
 	}
-	if iac.Repo == nil {
+	repoUrl, repoBranch, repoPath := iac.GetRepo()
+	if repoUrl == "" {
 		panic("Missing repo url")
 	}
 
 	folderPath := fmt.Sprintf("/tmp/%s", obj.PlanId)
-	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, iac.Repo.Path)
+	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, repoPath)
 
 	gitRepo, err := git.PlainClone(folderPath, false, &git.CloneOptions{
-		URL:      iac.Repo.Url,
+		URL:      repoUrl,
 		Progress: os.Stdout,
 	})
 
-	branchConfig, err := gitRepo.Branch(iac.Repo.DefaultBranch)
+	branchConfig, err := gitRepo.Branch(repoBranch)
 	if err != nil {
 		panic(err)
 	}
@@ -102,8 +103,8 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 
 	historyConfiguration := &iacPlans.HistoryProjectConfig{
 		GitSha:   branchConfig.Remote,
-		GitPath:  iac.Repo.Path,
-		GitUrl:   iac.Repo.Url,
+		GitPath:  repoBranch,
+		GitUrl:   repoUrl,
 		Envs:     iac.GetEnvs(true),
 		Variable: iac.GetVariables(),
 	}
