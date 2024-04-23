@@ -51,7 +51,7 @@ func WithUnitOfWork(r *repositories.UnitOfWork) IacConfiguration {
 	}
 }
 
-func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) {
+func (svc *IacService) RunTerraformPlan(projectId uuid.UUID, path string, sha string, variables map[string]string) (uuid.UUID, error) {
 	planId := uuid.New()
 
 	iac, err := svc.unitOfWork.IacRepository.Get(projectId)
@@ -59,7 +59,7 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) 
 		return uuid.Nil, err
 	}
 
-	iac.AddPlan(planId)
+	iac.AddPlan(planId, sha, path, variables)
 	err = svc.unitOfWork.IacRepository.Update(iac)
 	if err != nil {
 		return uuid.Nil, err
@@ -67,7 +67,11 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID) (uuid.UUID, error) 
 
 	var event = events.PlanTriggered{
 		ProjectId: projectId,
-		PlanId:    planId}
+		PlanId:    planId,
+		RepoPath:  path,
+		CommitSha: sha,
+		Variables: variables,
+	}
 
 	svc.publisher.Publish(eventbus.TRIGGERED_PLAN, event, context.Background())
 	if err != nil {

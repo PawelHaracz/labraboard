@@ -56,6 +56,7 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 	if err != nil {
 		panic(err)
 	}
+	//todo implement logic to handle plan triggered event from event
 	repoUrl, repoBranch, repoPath := iac.GetRepo()
 	if repoUrl == "" {
 		panic("Missing repo url")

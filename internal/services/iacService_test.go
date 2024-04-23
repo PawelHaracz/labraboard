@@ -81,7 +81,7 @@ func TestIacService_RunTerraformPlan(t *testing.T) {
 	aggregate, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform, make([]*valueobjects.Plans, 0), make([]*valueobjects.IaCEnv, 0), nil, make([]*valueobjects.IaCVariable, 0))
 	err = is.unitOfWork.IacRepository.Add(aggregate)
 
-	planId, err := is.RunTerraformPlan(aggregate.GetID())
+	planId, err := is.RunTerraformPlan(aggregate.GetID(), "", "", nil, nil)
 
 	if planId == uuid.Nil {
 		t.Errorf("error: %v details: %v", "planId is nil", err)

@@ -38,7 +38,7 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Add and remove env variables
 - [X] Add and remove  variables
 - [X] Fix handling returning changes from plan
-- [ ] Add unit testing of aggregates
+- [X] Add unit testing of aggregates
 - [ ] ~~Bug fixing e2e testing~~
 - [ ] Path for parameters in git folder
 - [ ] Time Lease for the state

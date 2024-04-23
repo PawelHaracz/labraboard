@@ -27,4 +27,7 @@ type Plans struct {
 	Status    PlanStatus
 	CreatedOn time.Time
 	ModifyOn  time.Time
+	CommitSha string
+	RepoPath  string
+	Variables map[string]string
 }

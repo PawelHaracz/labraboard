@@ -28,7 +28,7 @@ func TestPlanTriggerHandler(t *testing.T) {
 		t.Failed()
 	}
 	var planId = uuid.New()
-	aggregate.AddPlan(planId)
+	aggregate.AddPlan(planId, "", "", nil)
 	aggregate.AddEnv("ARM_TENANT_ID", "4c83ec3e-26b4-444f-afb7-8b171cd1b420", false)
 	aggregate.AddEnv("ARM_CLIENT_ID", "99cc9476-40fd-48b6-813f-e79e0ff830fc", false)
 	aggregate.AddEnv("ARM_CLIENT_SECRET", "TODO", true)

@@ -67,13 +67,16 @@ func (receiver *Iac) GetID() uuid.UUID {
 	return receiver.id
 }
 
-func (receiver *Iac) AddPlan(id uuid.UUID) {
+func (receiver *Iac) AddPlan(id uuid.UUID, sha string, path string, variables map[string]string) {
 	utc := time.Now().UTC()
 	receiver.plans = append(receiver.plans, &vo.Plans{
 		Status:    vo.Scheduled,
 		ModifyOn:  utc,
 		CreatedOn: utc,
 		Id:        id,
+		CommitSha: sha,
+		RepoPath:  path,
+		Variables: variables,
 	})
 }
 

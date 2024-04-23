@@ -31,7 +31,13 @@ func NewTerraformPlanController(iac *services.IacService) (*TerraformPlanControl
 // @Router /terraform/{projectId}/plan [POST]
 func (c *TerraformPlanController) CreateTerraformPlan(g *gin.Context) {
 	projectId := g.Param("projectId")
-	planId, err := c.IacService.RunTerraformPlan(uuid.MustParse(projectId))
+
+	var dto dtos.CreatePlan
+	if err := g.BindJSON(&dto); err != nil {
+		g.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload"})
+	}
+
+	planId, err := c.IacService.RunTerraformPlan(uuid.MustParse(projectId), dto.RepoPath, dto.RepoCommitSha, dto.Variables, dto.EnvVariables)
 	if err != nil {
 		g.String(http.StatusBadRequest, err.Error())
 		return
