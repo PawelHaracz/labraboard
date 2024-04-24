@@ -19,5 +19,4 @@ type CreatePlan struct {
 	RepoPath      string            `json:"repoPath"`
 	RepoCommitSha string            `json:"repoCommitSha"`
 	Variables     map[string]string `json:"variables"`
-	EnvVariables  map[string]string `json:"envVariables"`
 }
