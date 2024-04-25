@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"labraboard/internal/aggregates"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
+	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	iacSvc "labraboard/internal/services/iac"
 	vo "labraboard/internal/valueobjects"
@@ -56,24 +58,29 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 	if err != nil {
 		panic(err)
 	}
-	//todo implement logic to handle plan triggered event from event
+
 	repoUrl, repoBranch, repoPath := iac.GetRepo()
+	eventSha, eventCommitType, eventRepoPath := obj.Commit.Name, obj.Commit.Type, obj.RepoPath
 	if repoUrl == "" {
 		panic("Missing repo url")
 	}
 
+	if eventRepoPath == "" {
+		eventRepoPath = repoPath
+	}
+	if eventSha == "" {
+		eventSha = repoBranch
+
+	}
+
 	folderPath := fmt.Sprintf("/tmp/%s", obj.PlanId)
-	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, repoPath)
+	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, eventRepoPath)
 
 	gitRepo, err := git.PlainClone(folderPath, false, &git.CloneOptions{
 		URL:      repoUrl,
 		Progress: os.Stdout,
 	})
 
-	branchConfig, err := gitRepo.Branch(repoBranch)
-	if err != nil {
-		panic(err)
-	}
 	defer func(folderPath string) {
 		err := os.RemoveAll(folderPath)
 		if err != nil {
@@ -81,9 +88,37 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 		}
 	}(folderPath)
 
-	//if err = unitOfWork.IacRepository.Update(iac); err != nil {
-	//	panic(err)
-	//}
+	commitSha := ""
+
+	if eventSha == "" {
+		branchConfig, err := gitRepo.CommitObject(plumbing.NewHash(eventSha))
+		if err != nil {
+			panic(err)
+		}
+		commitSha = branchConfig.Hash.String()
+	} else {
+		switch eventCommitType {
+		case models.TAG:
+			tag, err := gitRepo.Tag(eventSha)
+			if err != nil {
+				panic(err)
+			}
+			commitSha = tag.Hash().String()
+		case models.SHA:
+			object, err := gitRepo.CommitObject(plumbing.NewHash(eventSha))
+			if err != nil {
+				panic(err)
+			}
+			commitSha = object.Hash.String()
+		case models.BRANCH:
+			branchConfig, err := gitRepo.CommitObject(plumbing.NewHash(eventSha))
+			if err != nil {
+				panic(err)
+			}
+			commitSha = branchConfig.Hash.String()
+		}
+	}
+
 	if err := createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
 		panic(err)
 	}
@@ -103,7 +138,7 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 	}
 
 	historyConfiguration := &iacPlans.HistoryProjectConfig{
-		GitSha:   branchConfig.Remote,
+		GitSha:   commitSha,
 		GitPath:  repoBranch,
 		GitUrl:   repoUrl,
 		Envs:     iac.GetEnvs(true),

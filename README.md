@@ -40,7 +40,8 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Fix handling returning changes from plan
 - [X] Add unit testing of aggregates
 - [ ] ~~Bug fixing e2e testing~~
-- [ ] Path for parameters in git folder
+- [X] Path for parameters in git folder
+- [ ] Create handlers cmd
 - [ ] Time Lease for the state
 - [ ] Handle scheduled plan in TerraformPlanner
 - [ ] Access Token for Backend http

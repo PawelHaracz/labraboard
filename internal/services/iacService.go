@@ -7,6 +7,7 @@ import (
 	"labraboard/internal/aggregates"
 	"labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
+	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	"labraboard/internal/routers/api/dtos"
 	vo "labraboard/internal/valueobjects"
@@ -51,7 +52,7 @@ func WithUnitOfWork(r *repositories.UnitOfWork) IacConfiguration {
 	}
 }
 
-func (svc *IacService) RunTerraformPlan(projectId uuid.UUID, path string, sha string, variables map[string]string) (uuid.UUID, error) {
+func (svc *IacService) RunTerraformPlan(projectId uuid.UUID, path string, sha string, commitType models.CommitType, variables map[string]string) (uuid.UUID, error) {
 	planId := uuid.New()
 
 	iac, err := svc.unitOfWork.IacRepository.Get(projectId)
@@ -69,7 +70,10 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID, path string, sha st
 		ProjectId: projectId,
 		PlanId:    planId,
 		RepoPath:  path,
-		CommitSha: sha,
+		Commit: events.Commit{
+			Type: commitType,
+			Name: sha,
+		},
 		Variables: variables,
 	}
 

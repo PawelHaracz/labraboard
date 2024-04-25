@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/eventbus/events"
+	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	dbmemory "labraboard/internal/repositories/memory"
 	vo "labraboard/internal/valueobjects"
@@ -31,7 +32,7 @@ func TestPlanTriggerHandler(t *testing.T) {
 	aggregate.AddPlan(planId, "", "", nil)
 	aggregate.AddEnv("ARM_TENANT_ID", "4c83ec3e-26b4-444f-afb7-8b171cd1b420", false)
 	aggregate.AddEnv("ARM_CLIENT_ID", "99cc9476-40fd-48b6-813f-e79e0ff830fc", false)
-	aggregate.AddEnv("ARM_CLIENT_SECRET", "TODO", true)
+	aggregate.AddEnv("ARM_CLIENT_SECRET", "", true)
 	aggregate.AddEnv("ARM_SUBSCRIPTION_ID", "cb5863b1-784d-4813-b2c7-e87919081ecb", false)
 
 	aggregate.AddRepo("https://github.com/microsoft/terraform-azure-devops-starter.git", "master", "101-terraform-job/terraform")
@@ -42,6 +43,10 @@ func TestPlanTriggerHandler(t *testing.T) {
 	var obj = &events.PlanTriggered{
 		ProjectId: aggregate.GetID(),
 		PlanId:    planId,
+		Commit: events.Commit{
+			Type: models.SHA,
+			Name: "2f5e1489476513212ae2f08c9a93beed7de47313",
+		},
 	}
 	handlePlanTriggered(uow, *obj)
 	aggregate, _ = uow.IacRepository.Get(aggregate.GetID())

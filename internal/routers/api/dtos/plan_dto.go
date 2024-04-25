@@ -1,6 +1,9 @@
 package dtos
 
-import "time"
+import (
+	"labraboard/internal/models"
+	"time"
+)
 
 type PlanDto struct {
 	Id        string    `json:"id"`
@@ -16,7 +19,8 @@ type PlanWithOutputDto struct {
 }
 
 type CreatePlan struct {
-	RepoPath      string            `json:"repoPath"`
-	RepoCommitSha string            `json:"repoCommitSha"`
-	Variables     map[string]string `json:"variables"`
+	RepoPath       string            `json:"repoPath"`
+	RepoCommit     string            `json:"repoCommit"`
+	RepoCommitType models.CommitType `json:"repoCommitType"`
+	Variables      map[string]string `json:"variables"`
 }

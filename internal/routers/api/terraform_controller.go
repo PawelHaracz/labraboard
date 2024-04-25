@@ -37,7 +37,7 @@ func (c *TerraformPlanController) CreateTerraformPlan(g *gin.Context) {
 		g.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload"})
 	}
 
-	planId, err := c.IacService.RunTerraformPlan(uuid.MustParse(projectId), dto.RepoPath, dto.RepoCommitSha, dto.Variables)
+	planId, err := c.IacService.RunTerraformPlan(uuid.MustParse(projectId), dto.RepoPath, dto.RepoCommit, dto.RepoCommitType, dto.Variables)
 	if err != nil {
 		g.String(http.StatusBadRequest, err.Error())
 		return

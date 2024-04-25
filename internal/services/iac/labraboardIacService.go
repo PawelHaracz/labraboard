@@ -3,17 +3,11 @@ package iac
 import (
 	"github.com/google/uuid"
 	"labraboard/internal/aggregates"
-)
-
-type Type string
-
-const (
-	Tofu      Type = "tofu"
-	Terraform Type = "terraform"
+	"labraboard/internal/models"
 )
 
 type Plan struct {
-	Type Type
+	Type models.Type
 	Id   uuid.UUID
 	plan *aggregates.IacPlan
 }
