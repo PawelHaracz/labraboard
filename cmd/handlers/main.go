@@ -3,18 +3,23 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 	"labraboard"
-	"labraboard/internal/eventbus/redis"
+	"labraboard/internal/eventbus/redisEventBus"
 	"labraboard/internal/handlers"
+	"labraboard/internal/managers"
 	"labraboard/internal/repositories"
 	"labraboard/internal/repositories/postgres"
 	"os"
 	"os/signal"
+	"time"
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
 	var cfg labraboard.Config
 	configFile := flag.String("config", "", "config file, if empty then use env variables")
 	flag.Parse()
@@ -47,11 +52,43 @@ func main() {
 		panic(err)
 	}
 
-	eventBus := redis.NewRedisEventBus(cfg.RedisHost, cfg.RedisPort, cfg.RedisPassword, cfg.RedisDB, context.Background())
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", cfg.RedisHost, cfg.RedisPort),
+		DB:       cfg.RedisDB,
+		Password: cfg.RedisPassword,
+	})
+
+	eventBus, err := redisEventBus.NewRedisEventBus(ctx, redisEventBus.WithRedis(redisClient))
+	if err != nil {
+		panic(err)
+	}
 
 	go handlers.HandlePlan(eventBus, uow)
+
+	delayTaskManager, err := managers.NewDelayTaskManager(ctx,
+		managers.WithRedis(redisClient),
+		managers.WithEventPublisher(eventBus))
+
+	if err != nil {
+		panic(err)
+	}
+
 	// Wait for a signal to quit:
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, os.Kill)
+
+	go func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done(): // if cancel() execute
+				return
+			default:
+				delayTaskManager.Listen(ctx)
+			}
+			time.Sleep(1 * time.Minute)
+		}
+	}(ctx)
+
 	<-signalChan
+	cancel()
 }

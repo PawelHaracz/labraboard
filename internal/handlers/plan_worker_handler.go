@@ -24,7 +24,7 @@ func HandlePlan(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.Uni
 			var event = events.PlanTriggered{}
 			err := json.Unmarshal(msg, &event)
 			if err != nil {
-				fmt.Errorf("cannot handle message type %T", event)
+				panic(fmt.Errorf("cannot handle message type %T", event))
 			}
 			fmt.Println("Received message:", msg)
 			handlePlanTriggered(repository, event)

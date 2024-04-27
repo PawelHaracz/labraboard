@@ -41,7 +41,7 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Add unit testing of aggregates
 - [ ] ~~Bug fixing e2e testing~~
 - [X] Path for parameters in git folder
-- [ ] Create handlers cmd
+- [X] Create handlers cmd
 - [ ] Time Lease for the state
 - [ ] Handle scheduled plan in TerraformPlanner
 - [ ] Access Token for Backend http

@@ -7,10 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 	"labraboard"
-	eb "labraboard/internal/eventbus"
-	"labraboard/internal/eventbus/redis"
-	"labraboard/internal/handlers"
+	"labraboard/internal/eventbus/redisEventBus"
 	"labraboard/internal/repositories"
 	"labraboard/internal/repositories/postgres"
 	"labraboard/internal/routers"
@@ -51,8 +50,27 @@ func main() {
 		panic(err)
 	}
 
-	eventBus := redis.NewRedisEventBus(cfg.RedisHost, cfg.RedisPort, cfg.RedisPassword, cfg.RedisDB, context.Background())
-	go ConfigureWorkers(eventBus, uow)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", cfg.RedisHost, cfg.RedisPort),
+		DB:       cfg.RedisDB,
+		Password: cfg.RedisPassword,
+	})
+
+	eventBus, err := redisEventBus.NewRedisEventBus(context.Background(), redisEventBus.WithRedis(redisClient))
+	if err != nil {
+		panic(err)
+	}
+	//
+	//delayTaskManager, err := managers.NewDelayTaskManager(
+	//	context.Background(),
+	//	managers.WithRedis(redisClient),
+	//	managers.WithEventPublisher(eventBus))
+
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	//go ConfigureWorkers(eventBus, uow, delayTaskManager)
 	routersInit := routers.InitRouter(eventBus, uow, db)
 	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
@@ -66,6 +84,6 @@ func ConfigRuntime() {
 	fmt.Printf("Running with %d CPUs\n", nuCPU)
 }
 
-func ConfigureWorkers(subscriber eb.EventSubscriber, uow *repositories.UnitOfWork) {
-	handlers.HandlePlan(subscriber, uow)
-}
+//func ConfigureWorkers(subscriber eb.EventSubscriber, uow *repositories.UnitOfWork, mangerListener managers.DelayTaskMangerListener) {
+//	go handlers.HandlePlan(subscriber, uow)
+//}
