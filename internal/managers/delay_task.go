@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 	"labraboard/internal/eventbus"
+	"labraboard/internal/eventbus/events"
 	"time"
 )
 
@@ -15,17 +16,17 @@ const delayedList = "delayed"
 
 type DelayTaskManagerConfiguration func(os *delayTask) error
 
-type DelayTaskMangerListener interface {
+type DelayTaskManagerListener interface {
 	Listen(ctx context.Context)
 }
 
-type DelayTaskMangerPublisher interface {
-	Publish(EventName eventbus.EventName, Content interface{}, WaitTime time.Duration, ctx context.Context)
+type DelayTaskManagerPublisher interface {
+	Publish(EventName events.EventName, Content events.Event, WaitTime time.Duration, ctx context.Context)
 }
 
-type DelayTaskManger interface {
-	DelayTaskMangerListener
-	DelayTaskMangerPublisher
+type DelayTaskManager interface {
+	DelayTaskManagerListener
+	DelayTaskManagerPublisher
 }
 
 type delayTask struct {
@@ -34,12 +35,12 @@ type delayTask struct {
 }
 
 type task struct {
-	EventName eventbus.EventName
-	Content   interface{}
+	EventName events.EventName
+	Content   events.Event
 	WaitTime  time.Duration
 }
 
-func NewDelayTaskManager(ctx context.Context, configs ...DelayTaskManagerConfiguration) (DelayTaskManger, error) {
+func NewDelayTaskManager(ctx context.Context, configs ...DelayTaskManagerConfiguration) (DelayTaskManager, error) {
 	dt := &delayTask{}
 	for _, cfg := range configs {
 		if err := cfg(dt); err != nil {
@@ -103,8 +104,8 @@ func (dt *delayTask) Listen(ctx context.Context) {
 			fmt.Println(err)
 			panic("JSON!!!")
 		}
-		eventName := &tasks[i].EventName
-		dt.publisher.Publish(*eventName, &tasks[i].Content, ctx)
+		eventName := tasks[i].EventName
+		dt.publisher.Publish(eventName, tasks[i].Content, ctx)
 
 	}
 
@@ -116,7 +117,7 @@ func (dt *delayTask) Listen(ctx context.Context) {
 
 }
 
-func (dt *delayTask) Publish(EventName eventbus.EventName, Content interface{}, WaitTime time.Duration, ctx context.Context) {
+func (dt *delayTask) Publish(EventName events.EventName, Content events.Event, WaitTime time.Duration, ctx context.Context) {
 	task := &task{
 		EventName,
 		Content,

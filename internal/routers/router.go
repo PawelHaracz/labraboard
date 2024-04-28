@@ -7,13 +7,13 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"labraboard/docs"
 	"labraboard/internal/eventbus"
+	"labraboard/internal/managers"
 	"labraboard/internal/repositories"
-	"labraboard/internal/repositories/postgres"
 	api "labraboard/internal/routers/api"
 	"labraboard/internal/services"
 )
 
-func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.UnitOfWork, database *postgres.Database) *gin.Engine {
+func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.UnitOfWork, delayTaskManagerPublisher managers.DelayTaskManagerPublisher) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(gin.Logger())
@@ -24,12 +24,13 @@ func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.Unit
 	iac, err := services.NewIacService(
 		services.WithEventBus(publisher),
 		services.WithUnitOfWork(unitOfWork))
+
 	if err != nil {
 		panic(err)
 	}
 
 	tfController, err := api.NewTerraformPlanController(iac)
-	stateController, err := api.NewStateController()
+	stateController, err := api.NewStateController(delayTaskManagerPublisher)
 	iacController, err := api.NewIacController(iac)
 
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"labraboard"
 	"labraboard/internal/eventbus/redisEventBus"
+	"labraboard/internal/managers"
 	"labraboard/internal/repositories"
 	"labraboard/internal/repositories/postgres"
 	"labraboard/internal/routers"
@@ -61,17 +62,17 @@ func main() {
 		panic(err)
 	}
 	//
-	//delayTaskManager, err := managers.NewDelayTaskManager(
-	//	context.Background(),
-	//	managers.WithRedis(redisClient),
-	//	managers.WithEventPublisher(eventBus))
+	delayTaskManager, err := managers.NewDelayTaskManager(
+		context.Background(),
+		managers.WithRedis(redisClient),
+		managers.WithEventPublisher(eventBus))
 
-	//if err != nil {
-	//	panic(err)
-	//}
+	if err != nil {
+		panic(err)
+	}
 
 	//go ConfigureWorkers(eventBus, uow, delayTaskManager)
-	routersInit := routers.InitRouter(eventBus, uow, db)
+	routersInit := routers.InitRouter(eventBus, uow, delayTaskManager)
 	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
 		panic(err)

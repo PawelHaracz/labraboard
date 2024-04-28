@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	eb "labraboard/internal/eventbus"
+	"labraboard/internal/eventbus/events"
 	"sync"
 )
 
 type PubSub struct {
 	mu   sync.RWMutex
-	subs map[eb.EventName][]chan []byte
+	subs map[events.EventName][]chan []byte
 }
 
-func (ps *PubSub) Subscribe(key eb.EventName, ctx context.Context) chan []byte {
+func (ps *PubSub) Subscribe(key events.EventName, ctx context.Context) chan []byte {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
@@ -22,7 +23,7 @@ func (ps *PubSub) Subscribe(key eb.EventName, ctx context.Context) chan []byte {
 	return ch
 }
 
-func (ps *PubSub) Publish(key eb.EventName, event interface{}, ctx context.Context) {
+func (ps *PubSub) Publish(key events.EventName, event events.Event, ctx context.Context) {
 	ps.mu.RLock()
 	defer ps.mu.RUnlock()
 
@@ -32,7 +33,7 @@ func (ps *PubSub) Publish(key eb.EventName, event interface{}, ctx context.Conte
 	}
 }
 
-func (ps *PubSub) Unsubscribe(key eb.EventName, ch chan []byte, ctx context.Context) {
+func (ps *PubSub) Unsubscribe(key events.EventName, ch chan []byte, ctx context.Context) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 
@@ -47,7 +48,7 @@ func (ps *PubSub) Unsubscribe(key eb.EventName, ch chan []byte, ctx context.Cont
 
 func newMemoryPublisher() *PubSub {
 	return &PubSub{
-		subs: make(map[eb.EventName][]chan []byte),
+		subs: make(map[events.EventName][]chan []byte),
 	}
 }
 

@@ -6,6 +6,8 @@ import (
 	"labraboard/internal/models"
 )
 
+const TRIGGERED_PLAN EventName = "triggered_plan"
+
 type Commit struct {
 	Type models.CommitType
 	Name string

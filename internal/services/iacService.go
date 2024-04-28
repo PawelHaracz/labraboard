@@ -77,7 +77,7 @@ func (svc *IacService) RunTerraformPlan(projectId uuid.UUID, path string, sha st
 		Variables: variables,
 	}
 
-	svc.publisher.Publish(eventbus.TRIGGERED_PLAN, event, context.Background())
+	svc.publisher.Publish(events.TRIGGERED_PLAN, event, context.Background())
 	if err != nil {
 		return uuid.Nil, err
 	}

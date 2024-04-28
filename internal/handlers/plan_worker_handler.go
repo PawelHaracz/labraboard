@@ -18,7 +18,7 @@ import (
 )
 
 func HandlePlan(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) {
-	pl := eventSubscriber.Subscribe(eb.TRIGGERED_PLAN, context.Background())
+	pl := eventSubscriber.Subscribe(events.TRIGGERED_PLAN, context.Background())
 	go func(repository *repositories.UnitOfWork) {
 		for msg := range pl {
 			var event = events.PlanTriggered{}

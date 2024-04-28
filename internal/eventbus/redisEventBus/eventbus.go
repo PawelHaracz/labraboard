@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
-	"labraboard/internal/eventbus"
+	"labraboard/internal/eventbus/events"
 	"log"
 )
 
@@ -43,7 +43,7 @@ func WithRedis(redisClient *redis.Client) EventBusConfiguration {
 	}
 }
 
-func (r *EventBus) Subscribe(key eventbus.EventName, ctx context.Context) chan []byte {
+func (r *EventBus) Subscribe(key events.EventName, ctx context.Context) chan []byte {
 	subscriber := r.redisClient.Subscribe(ctx, string(key))
 
 	item := make(chan []byte)
@@ -65,11 +65,11 @@ func (r *EventBus) Subscribe(key eventbus.EventName, ctx context.Context) chan [
 	return item
 }
 
-func (r *EventBus) Unsubscribe(key eventbus.EventName, ch chan []byte, ctx context.Context) {
+func (r *EventBus) Unsubscribe(key events.EventName, ch chan []byte, ctx context.Context) {
 
 }
 
-func (r *EventBus) Publish(key eventbus.EventName, event interface{}, ctx context.Context) {
+func (r *EventBus) Publish(key events.EventName, event events.Event, ctx context.Context) {
 	if err := r.redisClient.Publish(ctx, string(key), event).Err(); err != nil {
 		panic(err)
 	}

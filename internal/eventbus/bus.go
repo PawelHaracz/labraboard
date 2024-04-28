@@ -1,14 +1,17 @@
 package eventbus
 
-import "context"
+import (
+	"context"
+	"labraboard/internal/eventbus/events"
+)
 
 type EventPublisher interface {
-	Publish(key EventName, event interface{}, ctx context.Context)
+	Publish(key events.EventName, event events.Event, ctx context.Context)
 }
 
 type EventSubscriber interface {
-	Subscribe(key EventName, ctx context.Context) chan []byte
-	Unsubscribe(key EventName, ch chan []byte, ctx context.Context)
+	Subscribe(key events.EventName, ctx context.Context) chan []byte
+	Unsubscribe(key events.EventName, ch chan []byte, ctx context.Context)
 }
 
 type Bus struct {
