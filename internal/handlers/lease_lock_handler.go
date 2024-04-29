@@ -1,1 +1,54 @@
 package handlers
+
+import (
+	eb "labraboard/internal/eventbus"
+	"labraboard/internal/models"
+	"labraboard/internal/repositories"
+)
+
+//todo implement generic one handler with object instead multiple
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"labraboard/internal/eventbus/events"
+)
+
+func HandleLeaseLock(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) {
+	handler := eventSubscriber.Subscribe(events.LEASE_LOCK, context.Background())
+	for msg := range handler {
+		var event = events.LeasedLock{}
+		err := json.Unmarshal(msg, &event)
+		if err != nil {
+			panic(fmt.Errorf("cannot handle message type %T", event))
+		}
+		fmt.Println("Received message:", msg)
+		go handle(unitOfWork, event)
+	}
+}
+
+func handle(unitOfWork *repositories.UnitOfWork, event events.LeasedLock) {
+	if event.Type != models.Terraform {
+		return
+	}
+
+	item, err := unitOfWork.TerraformStateDbRepository.Get(event.Id)
+	if err != nil {
+		panic(err) //todo logging
+	}
+
+	info, err := item.GetLockInfo()
+	if err != nil {
+		//todo logging
+		return
+	}
+
+	if info == nil {
+		return
+	}
+
+	if err = item.SetLockInfo(nil); err != nil {
+		//todo logging
+		return
+	}
+}

@@ -63,7 +63,9 @@ func main() {
 		panic(err)
 	}
 
+	//todo move to 1 interface
 	go handlers.HandlePlan(eventBus, uow)
+	go handlers.HandleLeaseLock(eventBus, uow)
 
 	delayTaskManager, err := managers.NewDelayTaskManager(ctx,
 		managers.WithRedis(redisClient),

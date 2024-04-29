@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
+	_ "github.com/redis/go-redis/v9"
 	"labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
 	"time"

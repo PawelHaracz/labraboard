@@ -112,6 +112,10 @@ func (s *TerraformState) GetLockInfo() (*LockInfo, error) {
 }
 
 func (s *TerraformState) SetLockInfo(lock *LockInfo) error {
+	if lock == nil {
+		s.lock = make([]byte, 0)
+		return nil
+	}
 	b, err := json.Marshal(lock)
 	if err != nil {
 		return errors.Wrap(err, "cannot encode lock")

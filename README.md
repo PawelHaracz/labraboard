@@ -42,15 +42,16 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [ ] ~~Bug fixing e2e testing~~
 - [X] Path for parameters in git folder
 - [X] Create handlers cmd
-- [ ] Time Lease for the state
+- [X] Time Lease for the state
+- [ ] Implement Logging
 - [ ] Handle scheduled plan in TerraformPlanner
+- [ ] Run plan using http backend 
 - [ ] Access Token for Backend http
-- [ ] Run plan using http backend
-- [ ] Integrate plan with terraform plan association
 - [ ] Clean solution to be more DDD
-- [ ] Handle other version than version 4.0 of tf
+- [ ] Create Plan changes during run, what was happened during the time
 - [ ] Apply Mechanism to handle the state
 - [ ] Integrate with the Git
+- [ ] Handle other version than version 4.0 of tf 
 - [ ] Handle multiple version of tf and tofu
 - [ ] Policies and run on pre/post plan/apply
 - [ ] Authenticate
