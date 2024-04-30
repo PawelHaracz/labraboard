@@ -14,25 +14,37 @@ import (
 	"labraboard/internal/eventbus/events"
 )
 
-func HandleLeaseLock(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) {
-	handler := eventSubscriber.Subscribe(events.LEASE_LOCK, context.Background())
-	for msg := range handler {
+type terraformStateLeaseLockHandler struct {
+	eventSubscriber eb.EventSubscriber
+	unitOfWork      *repositories.UnitOfWork
+}
+
+func newTerraformStateLeaseLockHandler(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) (*terraformStateLeaseLockHandler, error) {
+	return &terraformStateLeaseLockHandler{
+		eventSubscriber,
+		unitOfWork,
+	}, nil
+}
+
+func (handler *terraformStateLeaseLockHandler) Handle(ctx context.Context) {
+	locks := handler.eventSubscriber.Subscribe(events.LEASE_LOCK, ctx)
+	for msg := range locks {
 		var event = events.LeasedLock{}
 		err := json.Unmarshal(msg, &event)
 		if err != nil {
 			panic(fmt.Errorf("cannot handle message type %T", event))
 		}
 		fmt.Println("Received message:", msg)
-		go handle(unitOfWork, event)
+		go handler.handle(event)
 	}
 }
 
-func handle(unitOfWork *repositories.UnitOfWork, event events.LeasedLock) {
+func (handler *terraformStateLeaseLockHandler) handle(event events.LeasedLock) {
 	if event.Type != models.Terraform {
 		return
 	}
 
-	item, err := unitOfWork.TerraformStateDbRepository.Get(event.Id)
+	item, err := handler.unitOfWork.TerraformStateDbRepository.Get(event.Id)
 	if err != nil {
 		panic(err) //todo logging
 	}

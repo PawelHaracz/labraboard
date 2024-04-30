@@ -43,6 +43,7 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Path for parameters in git folder
 - [X] Create handlers cmd
 - [X] Time Lease for the state
+- [X] Refactor and move to use interfaces in handlers
 - [ ] Implement Logging
 - [ ] Handle scheduled plan in TerraformPlanner
 - [ ] Run plan using http backend 

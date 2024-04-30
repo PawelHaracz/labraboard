@@ -17,9 +17,21 @@ import (
 	"os"
 )
 
-func HandlePlan(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) {
-	pl := eventSubscriber.Subscribe(events.TRIGGERED_PLAN, context.Background())
-	go func(repository *repositories.UnitOfWork) {
+type triggeredPlanHandler struct {
+	eventSubscriber eb.EventSubscriber
+	unitOfWork      *repositories.UnitOfWork
+}
+
+func newTriggeredPlanHandler(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) (*triggeredPlanHandler, error) {
+	return &triggeredPlanHandler{
+		eventSubscriber,
+		unitOfWork,
+	}, nil
+}
+
+func (handler *triggeredPlanHandler) Handle(ctx context.Context) {
+	pl := handler.eventSubscriber.Subscribe(events.TRIGGERED_PLAN, ctx)
+	go func() {
 		for msg := range pl {
 			var event = events.PlanTriggered{}
 			err := json.Unmarshal(msg, &event)
@@ -27,9 +39,9 @@ func HandlePlan(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.Uni
 				panic(fmt.Errorf("cannot handle message type %T", event))
 			}
 			fmt.Println("Received message:", msg)
-			handlePlanTriggered(repository, event)
+			handler.handlePlanTriggered(event)
 		}
-	}(unitOfWork)
+	}()
 }
 
 func createBackendFile(path string, statePath string) error {
@@ -53,8 +65,8 @@ func createBackendFile(path string, statePath string) error {
 	return nil
 }
 
-func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTriggered) {
-	iac, err := unitOfWork.IacRepository.Get(obj.ProjectId)
+func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggered) {
+	iac, err := handler.unitOfWork.IacRepository.Get(obj.ProjectId)
 	if err != nil {
 		panic(err)
 	}
@@ -131,7 +143,7 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 	iacTerraformPlanJson, err := tofu.Plan(iac.GetEnvs(false), iac.GetVariables())
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
-		if err = unitOfWork.IacRepository.Update(iac); err != nil {
+		if err = handler.unitOfWork.IacRepository.Update(iac); err != nil {
 			panic(err)
 		}
 		return
@@ -153,10 +165,10 @@ func handlePlanTriggered(unitOfWork *repositories.UnitOfWork, obj events.PlanTri
 	plan.AddPlan(iacTerraformPlanJson.GetPlan())
 	plan.AddChanges(iacTerraformPlanJson.GetChanges()...)
 	iac.UpdatePlan(obj.PlanId, vo.Succeed) //optimistic change :)
-	if err = unitOfWork.IacPlan.Add(plan); err != nil {
+	if err = handler.unitOfWork.IacPlan.Add(plan); err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 	}
-	if err = unitOfWork.IacRepository.Update(iac); err != nil {
+	if err = handler.unitOfWork.IacRepository.Update(iac); err != nil {
 		panic(err)
 	}
 }

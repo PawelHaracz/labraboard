@@ -48,7 +48,8 @@ func TestPlanTriggerHandler(t *testing.T) {
 			Name: "2f5e1489476513212ae2f08c9a93beed7de47313",
 		},
 	}
-	handlePlanTriggered(uow, *obj)
+	handler, _ := newTriggeredPlanHandler(nil, uow)
+	handler.handlePlanTriggered(*obj)
 	aggregate, _ = uow.IacRepository.Get(aggregate.GetID())
 	plan, err := aggregate.GetPlan(planId)
 	if err != nil {

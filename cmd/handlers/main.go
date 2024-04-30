@@ -19,6 +19,10 @@ import (
 )
 
 func main() {
+	// Wait for a signal to quit:
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, os.Kill)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	var cfg labraboard.Config
 	configFile := flag.String("config", "", "config file, if empty then use env variables")
@@ -39,6 +43,7 @@ func main() {
 	defer func(db *postgres.Database) {
 		err := db.Close()
 		if err != nil {
+			cancel()
 			panic(err)
 		}
 	}(db)
@@ -49,6 +54,7 @@ func main() {
 		repositories.WithIacPlanRepositoryDbRepository(db),
 	)
 	if err != nil {
+		cancel()
 		panic(err)
 	}
 
@@ -60,24 +66,29 @@ func main() {
 
 	eventBus, err := redisEventBus.NewRedisEventBus(ctx, redisEventBus.WithRedis(redisClient))
 	if err != nil {
+		cancel()
 		panic(err)
 	}
 
-	//todo move to 1 interface
-	go handlers.HandlePlan(eventBus, uow)
-	go handlers.HandleLeaseLock(eventBus, uow)
+	handlerFactory := handlers.NewEventHandlerFactory(eventBus, uow)
+
+	allHandlers, err := handlerFactory.RegisterAllHandlers()
+	if err != nil {
+		cancel()
+		panic(err)
+	}
+	for _, handler := range append(allHandlers) {
+		go handler.Handle(ctx)
+	}
 
 	delayTaskManager, err := managers.NewDelayTaskManager(ctx,
 		managers.WithRedis(redisClient),
 		managers.WithEventPublisher(eventBus))
 
 	if err != nil {
+		cancel()
 		panic(err)
 	}
-
-	// Wait for a signal to quit:
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, os.Kill)
 
 	go func(ctx context.Context) {
 		for {
