@@ -8,8 +8,10 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog"
 	"labraboard"
 	"labraboard/internal/eventbus/redisEventBus"
+	"labraboard/internal/logger"
 	"labraboard/internal/managers"
 	"labraboard/internal/repositories"
 	"labraboard/internal/repositories/postgres"
@@ -17,14 +19,16 @@ import (
 	"runtime"
 )
 
-func main() {
-	var cfg labraboard.Config
+var cfg labraboard.Config
+var log zerolog.Logger
+
+func init() {
 	configFile := flag.String("config", "", "config file, if empty then use env variables")
 	flag.Parse()
 	if *configFile == "" {
 		err := cleanenv.ReadEnv(&cfg)
 		if err != nil {
-			panic(errors.Wrap(err, "cannot read config file"))
+			panic(errors.Wrap(err, "Missing env variables"))
 		}
 	} else {
 		err := cleanenv.ReadConfig(*configFile, &cfg)
@@ -32,13 +36,18 @@ func main() {
 			panic(errors.Wrap(err, "cannot read config file"))
 		}
 	}
+	logger.Init(cfg.LogLevel)
+	log = logger.Get()
+}
+
+func main() {
 	ConfigRuntime()
 	gin.SetMode(gin.ReleaseMode)
 	db := postgres.NewDatabase(cfg.ConnectionString)
 	defer func(db *postgres.Database) {
 		err := db.Close()
 		if err != nil {
-			panic(err)
+			log.Panic().Err(err)
 		}
 	}(db)
 	db.Migrate()
@@ -48,7 +57,7 @@ func main() {
 		repositories.WithIacPlanRepositoryDbRepository(db),
 	)
 	if err != nil {
-		panic(err)
+		log.Panic().Err(err)
 	}
 
 	redisClient := redis.NewClient(&redis.Options{
@@ -59,7 +68,7 @@ func main() {
 
 	eventBus, err := redisEventBus.NewRedisEventBus(context.Background(), redisEventBus.WithRedis(redisClient))
 	if err != nil {
-		panic(err)
+		log.Panic().Err(err)
 	}
 	//
 	delayTaskManager, err := managers.NewDelayTaskManager(
@@ -68,23 +77,21 @@ func main() {
 		managers.WithEventPublisher(eventBus))
 
 	if err != nil {
-		panic(err)
+		log.Panic().Err(err)
 	}
 
 	//go ConfigureWorkers(eventBus, uow, delayTaskManager)
 	routersInit := routers.InitRouter(eventBus, uow, delayTaskManager)
 	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
-		panic(err)
+		log.Panic().Err(err)
 	}
+
+	log.Info().Int("httpPort", cfg.HttpPort).Msgf("started server on 0.0.0.0:%d", cfg.HttpPort)
 }
 
 func ConfigRuntime() {
 	nuCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(nuCPU)
-	fmt.Printf("Running with %d CPUs\n", nuCPU)
+	log.Info().Int("GOMAXPROCS", nuCPU).Msgf("Running with %d CPUs\n", nuCPU)
 }
-
-//func ConfigureWorkers(subscriber eb.EventSubscriber, uow *repositories.UnitOfWork, mangerListener managers.DelayTaskMangerListener) {
-//	go handlers.HandlePlan(subscriber, uow)
-//}

@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"labraboard/internal/logger"
 	"net/http"
 )
 
@@ -18,4 +19,6 @@ import (
 // @Router /example/helloworld [get]
 func HelloWorld(g *gin.Context) {
 	g.JSON(http.StatusOK, "helloworld")
+	l := logger.GetGinLogger(g)
+	l.Info().Msg("Logging hello world")
 }

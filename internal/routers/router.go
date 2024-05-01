@@ -2,11 +2,13 @@ package routers
 
 import (
 	"github.com/gin-contrib/gzip"
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"labraboard/docs"
 	"labraboard/internal/eventbus"
+	"labraboard/internal/logger"
 	"labraboard/internal/managers"
 	"labraboard/internal/repositories"
 	api "labraboard/internal/routers/api"
@@ -16,9 +18,7 @@ import (
 func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.UnitOfWork, delayTaskManagerPublisher managers.DelayTaskManagerPublisher) *gin.Engine {
 	r := gin.Default()
 
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
-	r.Use(gzip.Gzip(gzip.BestSpeed))
+	r.Use(requestid.New(), logger.GinLogger(), gin.Recovery(), gzip.Gzip(gzip.BestSpeed))
 	r.Use(UnitedSetup(unitOfWork))
 
 	iac, err := services.NewIacService(

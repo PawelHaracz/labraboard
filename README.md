@@ -45,6 +45,11 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [X] Time Lease for the state
 - [X] Refactor and move to use interfaces in handlers
 - [ ] Implement Logging
+  - [X] Logger and move init code to init function
+  - [X] Integrate logger with gin - use middleware for recordId, in future userId
+  - [ ] Replace all print to logger
+  - [ ] Add every method ctx to enrich logger
+  - [ ] Integrate handlers to use logger
 - [ ] Handle scheduled plan in TerraformPlanner
 - [ ] Run plan using http backend 
 - [ ] Access Token for Backend http
