@@ -14,7 +14,7 @@ type Database struct {
 
 func NewDatabase(connectionString string) *Database {
 	database, err := gorm.Open(postgres.Open(connectionString), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 
 	if err != nil {

@@ -47,6 +47,7 @@ It can be done by using command line `swag init -g ./cmd/main.go -o ./docs`
 - [ ] Implement Logging
   - [X] Logger and move init code to init function
   - [X] Integrate logger with gin - use middleware for recordId, in future userId
+  - [X] Propagate context values between loggers
   - [ ] Replace all print to logger
   - [ ] Add every method ctx to enrich logger
   - [ ] Integrate handlers to use logger

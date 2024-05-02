@@ -8,4 +8,5 @@ type Config struct {
 	RedisPassword    string `yaml:"redisPassword" env:"REDIS_PASSWORD" env-description:"Redis password" env-default:"eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81"`
 	RedisDB          int    `yaml:"redisDB" env:"REDIS_DB" env-description:"Redis database" env-default:"0"`
 	LogLevel         int8   `yaml:"logLevel" env:"LOG_LEVEL" env-description:"Redis database" env-default:"1"`
+	UsePrettyLogs    bool   `yaml:"usePrettyLogs" env:"USE_PRETTY_LOGS" env-description:"use pretty logs instead of json. Logs are pushed to stdout" env-default:"false"`
 }

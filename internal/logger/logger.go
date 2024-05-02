@@ -1,11 +1,10 @@
 package logger
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"github.com/rs/xid"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
+	"golang.org/x/net/context"
 	"io"
 	"os"
 	"runtime/debug"
@@ -17,17 +16,17 @@ var once sync.Once
 var hasInitialized = false
 var log zerolog.Logger
 
+const (
+	CorrelationIdKey = "correlation_id"
+	RequestIdKey     = "request_id"
+)
+
 var contextLogger string = "GIN_LOGGER"
 
-func Init(logLevel int8) {
+func Init(logLevel int8, prettyLogs bool) {
 	once.Do(func() {
 		zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 		zerolog.TimeFieldFormat = time.RFC3339Nano
-
-		var output io.Writer = zerolog.ConsoleWriter{
-			Out:        os.Stdout,
-			TimeFormat: time.RFC3339,
-		}
 
 		var gitRevision string
 
@@ -41,13 +40,21 @@ func Init(logLevel int8) {
 			}
 		}
 
-		log = zerolog.New(output).
+		log = zerolog.New(os.Stdout).
 			Level(zerolog.Level(logLevel)).
 			With().
 			Timestamp().
 			Str("git_revision", gitRevision).
 			Str("go_version", buildInfo.GoVersion).
 			Logger()
+
+		if prettyLogs {
+			var output io.Writer = zerolog.ConsoleWriter{
+				Out:        os.Stdout,
+				TimeFormat: time.RFC3339,
+			}
+			log = log.Output(output)
+		}
 
 		hasInitialized = true
 	})
@@ -60,53 +67,30 @@ func Get() zerolog.Logger {
 	return log
 }
 
-func GetGinLogger(c *gin.Context) zerolog.Logger {
-	correlationId := TakeValueFromHeader(c, "X-Correlation-ID")
-	requestId := TakeValueFromHeader(c, "X-Request-ID")
+func GetWitContext(ctx context.Context) zerolog.Logger {
 	l := Get()
+
+	correlationId := ""
+	requestId := ""
+	value := ctx.Value(CorrelationIdKey)
+	if value != nil {
+		correlationId = value.(string)
+	}
+	value = ctx.Value(RequestIdKey)
+	if value != nil {
+		requestId = value.(string)
+	}
 	l.UpdateContext(func(c zerolog.Context) zerolog.Context {
-		return c.
-			Str("correlation_id", correlationId).
-			Str("X-Request-ID", requestId)
+		if correlationId != "" {
+			c = c.Str(CorrelationIdKey, correlationId)
+		}
+
+		if requestId != "" {
+			c = c.Str(RequestIdKey, requestId)
+		}
+		return c
 	})
 
 	return l
-}
 
-func GinLogger() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		t := time.Now()
-		l := GetGinLogger(c)
-		path := c.Request.URL.Path
-		c.Next()
-
-		// access the status we are sending
-		status := c.Writer.Status()
-
-		l.
-			Info().
-			Str("path", path).
-			Str("method", c.Request.Method).
-			Str("url", c.Request.URL.RequestURI()).
-			Str("user_agent", c.Request.UserAgent()).
-			Dur("elapsed_ms", time.Since(t)).
-			Str("client_ip", c.ClientIP()).
-			Int("status_code", status).
-			Msg("incoming request")
-
-		c.Set(contextLogger, l)
-	}
-}
-
-func TakeValueFromHeader(c *gin.Context, header string) string {
-	headerValues, ok := c.Request.Header[header]
-	var value = ""
-	if !ok {
-		value = xid.New().String()
-		c.Request.Header.Add(header, value)
-	} else {
-		value = headerValues[0]
-	}
-
-	return value
 }

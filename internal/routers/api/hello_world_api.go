@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"golang.org/x/net/context"
 	"labraboard/internal/logger"
 	"net/http"
 )
@@ -19,6 +20,12 @@ import (
 // @Router /example/helloworld [get]
 func HelloWorld(g *gin.Context) {
 	g.JSON(http.StatusOK, "helloworld")
-	l := logger.GetGinLogger(g)
-	l.Info().Msg("Logging hello world")
+	l := logger.GetWitContext(g)
+	FooBar(g)
+	l.Info().Msg("Logged hello world")
+}
+
+func FooBar(ctx context.Context) {
+	l := logger.GetWitContext(ctx)
+	l.Info().Msg("called foobar")
 }

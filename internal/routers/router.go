@@ -8,7 +8,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"labraboard/docs"
 	"labraboard/internal/eventbus"
-	"labraboard/internal/logger"
 	"labraboard/internal/managers"
 	"labraboard/internal/repositories"
 	api "labraboard/internal/routers/api"
@@ -16,9 +15,9 @@ import (
 )
 
 func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.UnitOfWork, delayTaskManagerPublisher managers.DelayTaskManagerPublisher) *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
 
-	r.Use(requestid.New(), logger.GinLogger(), gin.Recovery(), gzip.Gzip(gzip.BestSpeed))
+	r.Use(requestid.New(), UseCorrelationId(), GinLogger(), gin.Recovery(), gzip.Gzip(gzip.BestSpeed))
 	r.Use(UnitedSetup(unitOfWork))
 
 	iac, err := services.NewIacService(

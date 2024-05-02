@@ -36,7 +36,7 @@ func init() {
 			panic(errors.Wrap(err, "cannot read config file"))
 		}
 	}
-	logger.Init(cfg.LogLevel)
+	logger.Init(cfg.LogLevel, cfg.UsePrettyLogs)
 	log = logger.Get()
 }
 
