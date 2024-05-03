@@ -21,8 +21,6 @@ const (
 	RequestIdKey     = "request_id"
 )
 
-var contextLogger string = "GIN_LOGGER"
-
 func Init(logLevel int8, prettyLogs bool) {
 	once.Do(func() {
 		zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
@@ -92,5 +90,4 @@ func GetWitContext(ctx context.Context) zerolog.Logger {
 	})
 
 	return l
-
 }
