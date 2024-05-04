@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/google/uuid"
+	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/eventbus/events"
 	"labraboard/internal/models"
@@ -25,7 +26,7 @@ func TestPlanTriggerHandler(t *testing.T) {
 	)
 
 	aggregate, _ := aggregates.NewIac(uuid.New(), vo.Terraform, nil, nil, nil, nil)
-	if err := uow.IacRepository.Add(aggregate); err != nil {
+	if err := uow.IacRepository.Add(aggregate, context.Background()); err != nil {
 		t.Failed()
 	}
 	var planId = uuid.New()
@@ -49,8 +50,8 @@ func TestPlanTriggerHandler(t *testing.T) {
 		},
 	}
 	handler, _ := newTriggeredPlanHandler(nil, uow)
-	handler.handlePlanTriggered(*obj)
-	aggregate, _ = uow.IacRepository.Get(aggregate.GetID())
+	handler.handlePlanTriggered(*obj, context.Background())
+	aggregate, _ = uow.IacRepository.Get(aggregate.GetID(), context.Background())
 	plan, err := aggregate.GetPlan(planId)
 	if err != nil {
 		t.Errorf("can't fetch plan: %v", err)
@@ -60,7 +61,7 @@ func TestPlanTriggerHandler(t *testing.T) {
 		t.Errorf("Plan Status not set to Succeed")
 	}
 
-	planAggregate, _ := uow.IacPlan.Get(planId)
+	planAggregate, _ := uow.IacPlan.Get(planId, context.Background())
 	planAggregate.GetChanges()
 	planJson := planAggregate.GetPlanJson()
 	if planJson == "" {

@@ -7,11 +7,20 @@ import (
 	"labraboard/internal/aggregates"
 	"labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
+	"labraboard/internal/logger"
 	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	"labraboard/internal/routers/api/dtos"
 	vo "labraboard/internal/valueobjects"
 )
+
+type TerraformPlanRunner struct {
+	ProjectId  uuid.UUID
+	Path       string
+	Sha        string
+	CommitType models.CommitType
+	Variables  map[string]string
+}
 
 type IacConfiguration func(os *IacService) error
 
@@ -52,48 +61,59 @@ func WithUnitOfWork(r *repositories.UnitOfWork) IacConfiguration {
 	}
 }
 
-func (svc *IacService) RunTerraformPlan(projectId uuid.UUID, path string, sha string, commitType models.CommitType, variables map[string]string) (uuid.UUID, error) {
+func (svc *IacService) RunTerraformPlan(runner TerraformPlanRunner, ctx context.Context) (uuid.UUID, error) {
 	planId := uuid.New()
+	log := logger.GetWitContext(ctx).
+		With().
+		Str("planId", planId.String()).
+		Str("gitSha", runner.Sha).
+		Str("gitPath", runner.Path).
+		Logger()
 
-	iac, err := svc.unitOfWork.IacRepository.Get(projectId)
+	iac, err := svc.unitOfWork.IacRepository.Get(runner.ProjectId, ctx)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	iac.AddPlan(planId, sha, path, variables)
-	err = svc.unitOfWork.IacRepository.Update(iac)
+	log.Info().
+		Msg("Creating project")
+
+	iac.AddPlan(planId, runner.Sha, runner.Path, runner.Variables)
+	err = svc.unitOfWork.IacRepository.Update(iac, ctx)
 	if err != nil {
+		log.Error().Err(err)
 		return uuid.Nil, err
 	}
 
 	var event = events.PlanTriggered{
-		ProjectId: projectId,
+		ProjectId: runner.ProjectId,
 		PlanId:    planId,
-		RepoPath:  path,
+		RepoPath:  runner.Path,
 		Commit: events.Commit{
-			Type: commitType,
-			Name: sha,
+			Type: runner.CommitType,
+			Name: runner.Sha,
 		},
-		Variables: variables,
+		Variables: runner.Variables,
 	}
 
-	svc.publisher.Publish(events.TRIGGERED_PLAN, event, context.Background())
+	svc.publisher.Publish(events.TRIGGERED_PLAN, event, ctx)
 	if err != nil {
+		log.Error().Err(err)
 		return uuid.Nil, err
 	}
 
 	return planId, nil
 }
 
-func (svc *IacService) GetProjects() ([]*aggregates.Iac, error) {
-	return svc.unitOfWork.IacRepository.GetAll(), nil // TODO implement pagination
+func (svc *IacService) GetProjects(ctx context.Context) ([]*aggregates.Iac, error) {
+	return svc.unitOfWork.IacRepository.GetAll(ctx), nil // TODO implement pagination
 }
 
-func (svc *IacService) GetProject(projectId uuid.UUID) (*aggregates.Iac, error) {
-	return svc.unitOfWork.IacRepository.Get(projectId)
+func (svc *IacService) GetProject(projectId uuid.UUID, ctx context.Context) (*aggregates.Iac, error) {
+	return svc.unitOfWork.IacRepository.Get(projectId, ctx)
 }
 
-func (svc *IacService) CreateProject(iacType vo.IaCType, repo *vo.IaCRepo) (uuid.UUID, error) {
+func (svc *IacService) CreateProject(iacType vo.IaCType, repo *vo.IaCRepo, ctx context.Context) (uuid.UUID, error) {
 	projectId := uuid.New()
 
 	iac, err := aggregates.NewIac(projectId, iacType, make([]*vo.Plans, 0), make([]*vo.IaCEnv, 0), repo, make([]*vo.IaCVariable, 0))
@@ -101,23 +121,23 @@ func (svc *IacService) CreateProject(iacType vo.IaCType, repo *vo.IaCRepo) (uuid
 		return uuid.Nil, err
 	}
 
-	if err := svc.unitOfWork.IacRepository.Add(iac); err != nil {
+	if err = svc.unitOfWork.IacRepository.Add(iac, ctx); err != nil {
 		return uuid.Nil, err
 	}
 
 	return projectId, nil
 }
 
-func (svc *IacService) GetPlans(projectId uuid.UUID) []*vo.Plans {
-	iac, err := svc.unitOfWork.IacRepository.Get(projectId)
+func (svc *IacService) GetPlans(projectId uuid.UUID, ctx context.Context) []*vo.Plans {
+	iac, err := svc.unitOfWork.IacRepository.Get(projectId, ctx)
 	if err != nil {
 		return nil
 	}
 	return iac.GetPlans()
 }
 
-func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID) (*dtos.PlanWithOutputDto, error) {
-	iac, err := svc.unitOfWork.IacRepository.Get(projectId)
+func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID, ctx context.Context) (*dtos.PlanWithOutputDto, error) {
+	iac, err := svc.unitOfWork.IacRepository.Get(projectId, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +153,7 @@ func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID) (*dtos.Pla
 		Status:    string(plan.Status),
 	}
 	if plan.Status == vo.Succeed {
-		p, err := svc.unitOfWork.IacPlan.Get(plan.Id)
+		p, err := svc.unitOfWork.IacPlan.Get(plan.Id, ctx)
 		add, update, deleteItem := p.GetChanges()
 		if err == nil {
 			m := map[string]interface{}{
@@ -152,8 +172,8 @@ func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID) (*dtos.Pla
 	return result, nil
 }
 
-func (svc *IacService) AddEnv(projectId uuid.UUID, name string, value string, isSecret bool) error {
-	iac, err := svc.GetProject(projectId)
+func (svc *IacService) AddEnv(projectId uuid.UUID, name string, value string, isSecret bool, ctx context.Context) error {
+	iac, err := svc.GetProject(projectId, ctx)
 	if err != nil {
 		return err
 	}
@@ -162,11 +182,11 @@ func (svc *IacService) AddEnv(projectId uuid.UUID, name string, value string, is
 		return err
 	}
 
-	return svc.unitOfWork.IacRepository.Update(iac)
+	return svc.unitOfWork.IacRepository.Update(iac, ctx)
 }
 
-func (svc *IacService) RemoveEnv(projectId uuid.UUID, name string) error {
-	iac, err := svc.GetProject(projectId)
+func (svc *IacService) RemoveEnv(projectId uuid.UUID, name string, ctx context.Context) error {
+	iac, err := svc.GetProject(projectId, ctx)
 	if err != nil {
 		return err
 	}
@@ -175,11 +195,11 @@ func (svc *IacService) RemoveEnv(projectId uuid.UUID, name string) error {
 		return err
 	}
 
-	return svc.unitOfWork.IacRepository.Update(iac)
+	return svc.unitOfWork.IacRepository.Update(iac, ctx)
 }
 
-func (svc *IacService) AddVariable(projectId uuid.UUID, name string, value string) error {
-	iac, err := svc.GetProject(projectId)
+func (svc *IacService) AddVariable(projectId uuid.UUID, name string, value string, ctx context.Context) error {
+	iac, err := svc.GetProject(projectId, ctx)
 	if err != nil {
 		return err
 	}
@@ -188,11 +208,11 @@ func (svc *IacService) AddVariable(projectId uuid.UUID, name string, value strin
 		return err
 	}
 
-	return svc.unitOfWork.IacRepository.Update(iac)
+	return svc.unitOfWork.IacRepository.Update(iac, ctx)
 }
 
-func (svc *IacService) RemoveVariable(projectId uuid.UUID, name string) error {
-	iac, err := svc.GetProject(projectId)
+func (svc *IacService) RemoveVariable(projectId uuid.UUID, name string, ctx context.Context) error {
+	iac, err := svc.GetProject(projectId, ctx)
 	if err != nil {
 		return err
 	}
@@ -201,5 +221,5 @@ func (svc *IacService) RemoveVariable(projectId uuid.UUID, name string) error {
 		return err
 	}
 
-	return svc.unitOfWork.IacRepository.Update(iac)
+	return svc.unitOfWork.IacRepository.Update(iac, ctx)
 }

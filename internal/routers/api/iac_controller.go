@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go/log"
+	"labraboard/internal/logger"
 	"labraboard/internal/routers/api/dtos"
 	"labraboard/internal/services"
 	vo "labraboard/internal/valueobjects"
@@ -29,10 +30,10 @@ func NewIacController(service *services.IacService) (*IacController, error) {
 // @Success 200 {array} dtos.GetProjectBaseDto
 // @Router /project [GET]
 func (iac *IacController) GetProjects(context *gin.Context) {
-	projects, err := iac.iac.GetProjects()
-
+	l := logger.GetWitContext(context)
+	projects, err := iac.iac.GetProjects(l.WithContext(context))
 	if err != nil {
-		log.Error(err)
+		l.Warn().Err(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "cannot retrieve projects"})
 		return
 	}
@@ -61,9 +62,21 @@ func (iac *IacController) GetProjects(context *gin.Context) {
 // @Router /project/{projectId} [GET]
 func (iac *IacController) GetProject(context *gin.Context) {
 	projectId := context.Param("projectId")
-	project, err := iac.iac.GetProject(uuid.MustParse(projectId))
+	l := logger.GetWitContext(context).
+		With().
+		Str("projectId", projectId).
+		Logger()
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+
+	project, err := iac.iac.GetProject(parsedProjectId, l.WithContext(context))
 
 	if err != nil {
+		l.Warn().Err(err)
 		log.Error(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "cannot retrieve project"})
 		return
@@ -99,7 +112,10 @@ func (iac *IacController) GetProject(context *gin.Context) {
 func (iac *IacController) CreateProject(context *gin.Context) {
 
 	var dto dtos.CreateProjectDto
+	l := logger.GetWitContext(context)
+
 	if err := context.BindJSON(&dto); err != nil {
+		l.Warn().Err(err)
 		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload"})
 	}
 	var repo = &vo.IaCRepo{
@@ -108,10 +124,10 @@ func (iac *IacController) CreateProject(context *gin.Context) {
 		Path:          dto.TerraformPath,
 	}
 
-	id, err := iac.iac.CreateProject(vo.IaCType(dto.IacType), repo)
+	id, err := iac.iac.CreateProject(vo.IaCType(dto.IacType), repo, l.WithContext(context))
 
 	if err != nil {
-		log.Error(err)
+		l.Warn().Err(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "cannot retrieve project"})
 		return
 	}
@@ -131,15 +147,26 @@ func (iac *IacController) CreateProject(context *gin.Context) {
 // @Router /project/{projectId}/env [PUT]
 func (iac *IacController) AddEnv(context *gin.Context) {
 	projectId := context.Param("projectId")
+	l := logger.GetWitContext(context).
+		With().
+		Str("projectId", projectId).
+		Logger()
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+
 	var dto dtos.AddEnvDto
 	if err := context.BindJSON(&dto); err != nil {
 		log.Error(err)
 		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload"})
 		return
 	}
-	err := iac.iac.AddEnv(uuid.MustParse(projectId), dto.Name, dto.Value, dto.IsSecret)
+	err = iac.iac.AddEnv(parsedProjectId, dto.Name, dto.Value, dto.IsSecret, l.WithContext(context))
 	if err != nil {
-		log.Error(err)
+		l.Warn().Err(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": fmt.Sprintf("cannot add env %s", dto.Name)})
 		return
 
@@ -161,8 +188,22 @@ func (iac *IacController) AddEnv(context *gin.Context) {
 func (iac *IacController) RemoveEnv(context *gin.Context) {
 	projectId := context.Param("projectId")
 	envName := context.Param("envName")
-	if err := iac.iac.RemoveEnv(uuid.MustParse(projectId), envName); err != nil {
-		log.Error(err)
+
+	l := logger.GetWitContext(context).
+		With().
+		Str("projectId", projectId).
+		Str("envName", envName).
+		Logger()
+
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+
+	if err = iac.iac.RemoveEnv(parsedProjectId, envName, l.WithContext(context)); err != nil {
+		l.Warn().Err(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": fmt.Sprintf("cannot remove env %s", envName)})
 		return
 	}
@@ -182,15 +223,28 @@ func (iac *IacController) RemoveEnv(context *gin.Context) {
 // @Router /project/{projectId}/variable [PUT]
 func (iac *IacController) AddVariable(context *gin.Context) {
 	projectId := context.Param("projectId")
+
+	l := logger.GetWitContext(context).
+		With().
+		Str("projectId", projectId).
+		Logger()
+
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+
 	var dto dtos.AddVariableDto
-	if err := context.BindJSON(&dto); err != nil {
-		log.Error(err)
+	if err = context.BindJSON(&dto); err != nil {
+		l.Warn().Err(err)
 		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload"})
 		return
 	}
-	err := iac.iac.AddVariable(uuid.MustParse(projectId), dto.Name, dto.Value)
+	err = iac.iac.AddVariable(parsedProjectId, dto.Name, dto.Value, l.WithContext(context))
 	if err != nil {
-		log.Error(err)
+		l.Warn().Err(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": fmt.Sprintf("cannot add variable %s", dto.Name)})
 		return
 
@@ -212,8 +266,22 @@ func (iac *IacController) AddVariable(context *gin.Context) {
 func (iac *IacController) RemoveVariable(context *gin.Context) {
 	projectId := context.Param("projectId")
 	variableName := context.Param("variableName")
-	if err := iac.iac.RemoveVariable(uuid.MustParse(projectId), variableName); err != nil {
-		log.Error(err)
+
+	l := logger.GetWitContext(context).
+		With().
+		Str("projectId", projectId).
+		Str("variableName", variableName).
+		Logger()
+
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+
+	if err = iac.iac.RemoveVariable(parsedProjectId, variableName, l.WithContext(context)); err != nil {
+		l.Warn().Err(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": fmt.Sprintf("cannot remove variable %s", variableName)})
 		return
 	}

@@ -62,7 +62,7 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 	}, nil
 }
 
-func (svc *TofuIacService) Plan(envs map[string]string, variables []string) (*models.IacTerraformPlanJson, error) {
+func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx context.Context) (*models.IacTerraformPlanJson, error) {
 	var b bytes.Buffer
 	var planPath = "plan.tfplan"
 	jsonWriter := bufio.NewWriter(&b)

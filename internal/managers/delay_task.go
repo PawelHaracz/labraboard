@@ -1,6 +1,5 @@
 package managers
 
-//based on https://gist.github.com/stephde/7f4a01a845d890201eee6d02dd92a853
 import (
 	"context"
 	"encoding/json"
@@ -10,6 +9,7 @@ import (
 	_ "github.com/redis/go-redis/v9"
 	"labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
+	"labraboard/internal/logger"
 	"time"
 )
 
@@ -80,6 +80,7 @@ func WithEventPublisher(publisher eventbus.EventPublisher) DelayTaskManagerConfi
 }
 
 func (dt *delayTask) Listen(ctx context.Context) {
+	log := logger.GetWitContext(ctx)
 	maxTime := time.Now().Unix()
 	opt := &redis.ZRangeBy{
 		Min: fmt.Sprintf("%d", 0),
@@ -88,22 +89,21 @@ func (dt *delayTask) Listen(ctx context.Context) {
 	cmd := dt.client.ZRevRangeByScore(ctx, delayedList, opt)
 	resultSet, err := cmd.Result()
 	if err != nil {
-		fmt.Println(err)
-		panic("redis_error")
+		log.Error().Err(err)
 	}
 
 	tasks := make([]task, len(resultSet))
 
 	if len(tasks) == 0 {
-		fmt.Println("nothing to publish")
+		log.Info().Msg("nothing to publish")
 		return
 	}
 
 	for i, t := range resultSet {
-		err := json.Unmarshal([]byte(t), &tasks[i])
+		err = json.Unmarshal([]byte(t), &tasks[i])
 		if err != nil {
-			fmt.Println(err)
-			panic("JSON!!!")
+			log.Error().Err(err).Msg("JSON!!!")
+			return
 		}
 		eventName := tasks[i].EventName
 		dt.publisher.Publish(eventName, tasks[i].Content, ctx)
@@ -112,8 +112,8 @@ func (dt *delayTask) Listen(ctx context.Context) {
 
 	_, err = dt.client.ZRem(ctx, delayedList, resultSet).Result()
 	if err != nil {
-		fmt.Println(err)
-		panic("redis_error")
+		log.Error().Err(err).Msg("redis_error")
+		return
 	}
 
 }
@@ -124,11 +124,11 @@ func (dt *delayTask) Publish(EventName events.EventName, Content events.Event, W
 		Content,
 		WaitTime,
 	}
-
+	log := logger.GetWitContext(ctx)
 	jsonValue, err := json.Marshal(task)
 	if err != nil {
-		fmt.Println(err)
-		panic("JSON!!!")
+		log.Error().Err(err).Msg("JSON!!!")
+		return
 	}
 	taskReadyInSeconds := time.Now().Add(WaitTime).Unix()
 	member := redis.Z{

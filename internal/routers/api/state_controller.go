@@ -49,7 +49,7 @@ func (c *StateController) GetState(context *gin.Context) {
 		return
 	}
 
-	aggregate, err := repo.Get(parsedGuid)
+	aggregate, err := repo.Get(parsedGuid, l.WithContext(context))
 	if err != nil {
 		l.Warn().Err(err)
 		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
@@ -95,7 +95,7 @@ func (c *StateController) UpdateState(context *gin.Context) {
 		context.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
 		return
 	}
-	aggregate, err := repo.Get(parsedGuid)
+	aggregate, err := repo.Get(parsedGuid, l.WithContext(context))
 	if err != nil {
 		l.Info().Err(err).Msg("terraform state doesn't exist, creating")
 		utc := time.Now().UTC()
@@ -105,7 +105,7 @@ func (c *StateController) UpdateState(context *gin.Context) {
 			context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
 			return
 		}
-		err = repo.Add(aggregate)
+		err = repo.Add(aggregate, l.WithContext(context))
 		if err != nil {
 			l.Warn().Err(err).Msg("Could not save to storage")
 			context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
@@ -127,7 +127,7 @@ func (c *StateController) UpdateState(context *gin.Context) {
 	body, _ := json.Marshal(state)
 
 	aggregate.SetState(&body)
-	err = repo.Update(aggregate)
+	err = repo.Update(aggregate, l.WithContext(context))
 	if err != nil {
 		l.Warn().Err(err).Msg("Could not update to storage")
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
@@ -160,7 +160,7 @@ func (c *StateController) Lock(ctx *gin.Context) {
 		return
 	}
 	repo := ctx.MustGet(string(helpers.UnitOfWorkSetup)).(*repositories.UnitOfWork).TerraformStateDbRepository
-	aggregate, err := repo.Get(uuid.MustParse(projectId))
+	aggregate, err := repo.Get(uuid.MustParse(projectId), l.WithContext(ctx))
 	if err != nil {
 		l.Info().Err(err).Msg("terraform state doesn't exist, creating")
 		utc := time.Now().UTC()
@@ -170,7 +170,7 @@ func (c *StateController) Lock(ctx *gin.Context) {
 			ctx.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
 			return
 		}
-		err = repo.Add(aggregate)
+		err = repo.Add(aggregate, ctx)
 		if err != nil {
 			l.Warn().Err(err).Msg("Could not save to storage")
 			ctx.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
@@ -223,7 +223,7 @@ func (c *StateController) Lock(ctx *gin.Context) {
 		context.Background(),
 	)
 	eventLogger.Info().Msg("Published delayed message")
-	err = repo.Update(aggregate)
+	err = repo.Update(aggregate, l.WithContext(ctx))
 	if err != nil {
 		l.Warn().Err(err)
 		ctx.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not save to storage"})
@@ -259,7 +259,7 @@ func (c *StateController) Unlock(context *gin.Context) {
 		return
 	}
 	repo := context.MustGet(string(helpers.UnitOfWorkSetup)).(*repositories.UnitOfWork).TerraformStateDbRepository
-	aggregate, err := repo.Get(uuid.MustParse(projectId))
+	aggregate, err := repo.Get(uuid.MustParse(projectId), l.WithContext(context))
 	if err != nil {
 		l.Warn().Err(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": "Could not retrieve from storage"})
@@ -272,7 +272,7 @@ func (c *StateController) Unlock(context *gin.Context) {
 		l.Warn().Err(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": err.Error()})
 	}
-	err = repo.Update(aggregate)
+	err = repo.Update(aggregate, l.WithContext(context))
 	if err != nil {
 		l.Warn().Err(err)
 		context.JSON(http.StatusServiceUnavailable, gin.H{"message": err.Error()})

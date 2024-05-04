@@ -9,6 +9,7 @@ import (
 	"labraboard/internal/aggregates"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
+	"labraboard/internal/logger"
 	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	iacSvc "labraboard/internal/services/iac"
@@ -30,16 +31,17 @@ func newTriggeredPlanHandler(eventSubscriber eb.EventSubscriber, unitOfWork *rep
 }
 
 func (handler *triggeredPlanHandler) Handle(ctx context.Context) {
-	pl := handler.eventSubscriber.Subscribe(events.TRIGGERED_PLAN, ctx)
+	log := logger.GetWitContext(ctx).With().Str("event", string(events.TRIGGERED_PLAN)).Logger()
+	pl := handler.eventSubscriber.Subscribe(events.TRIGGERED_PLAN, log.WithContext(ctx))
 	go func() {
 		for msg := range pl {
 			var event = events.PlanTriggered{}
 			err := json.Unmarshal(msg, &event)
 			if err != nil {
-				panic(fmt.Errorf("cannot handle message type %T", event))
+				log.Error().Err(fmt.Errorf("cannot handle message type %T", event))
 			}
 			fmt.Println("Received message:", msg)
-			handler.handlePlanTriggered(event)
+			handler.handlePlanTriggered(event, log.WithContext(ctx))
 		}
 	}()
 }
@@ -65,16 +67,19 @@ func createBackendFile(path string, statePath string) error {
 	return nil
 }
 
-func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggered) {
-	iac, err := handler.unitOfWork.IacRepository.Get(obj.ProjectId)
+func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggered, ctx context.Context) {
+	log := logger.GetWitContext(ctx).With().Str("planId", obj.PlanId.String()).Str("projectId", obj.ProjectId.String()).Logger()
+	iac, err := handler.unitOfWork.IacRepository.Get(obj.ProjectId, log.WithContext(ctx))
 	if err != nil {
-		panic(err)
+		log.Error().Err(err)
+		return
 	}
 
 	repoUrl, repoBranch, repoPath := iac.GetRepo()
 	eventSha, eventCommitType, eventRepoPath := obj.Commit.Name, obj.Commit.Type, obj.RepoPath
 	if repoUrl == "" {
-		panic("Missing repo url")
+		log.Error().Msg("Missing repo url")
+		return
 	}
 
 	if eventRepoPath == "" {
@@ -94,8 +99,9 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 	})
 
 	defer func(folderPath string) {
-		err := os.RemoveAll(folderPath)
+		err = os.RemoveAll(folderPath)
 		if err != nil {
+			log.Error().Err(err)
 			return
 		}
 	}(folderPath)
@@ -105,7 +111,8 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 	if eventSha == "" {
 		branchConfig, err := gitRepo.CommitObject(plumbing.NewHash(eventSha))
 		if err != nil {
-			panic(err)
+			log.Error().Err(err)
+			return
 		}
 		commitSha = branchConfig.Hash.String()
 	} else {
@@ -113,38 +120,45 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		case models.TAG:
 			tag, err := gitRepo.Tag(eventSha)
 			if err != nil {
-				panic(err)
+				log.Error().Err(err)
+				return
 			}
 			commitSha = tag.Hash().String()
 		case models.SHA:
 			object, err := gitRepo.CommitObject(plumbing.NewHash(eventSha))
 			if err != nil {
-				panic(err)
+				log.Error().Err(err)
+				return
 			}
 			commitSha = object.Hash.String()
 		case models.BRANCH:
 			branchConfig, err := gitRepo.CommitObject(plumbing.NewHash(eventSha))
 			if err != nil {
-				panic(err)
+				log.Error().Err(err)
+				return
 			}
 			commitSha = branchConfig.Hash.String()
 		}
 	}
 
-	if err := createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
-		panic(err)
+	if err = createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
+		log.Error().Err(err)
+		return
 	}
 
 	tofu, err := iacSvc.NewTofuIacService(tofuFolderPath)
 	if err != nil {
-		panic(err)
+		log.Error().Err(err)
+		return
 	}
 
-	iacTerraformPlanJson, err := tofu.Plan(iac.GetEnvs(false), iac.GetVariables())
+	iacTerraformPlanJson, err := tofu.Plan(iac.GetEnvs(false), iac.GetVariables(), log.WithContext(ctx))
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
-		if err = handler.unitOfWork.IacRepository.Update(iac); err != nil {
-			panic(err)
+		log.Error().Err(err)
+		if err = handler.unitOfWork.IacRepository.Update(iac, log.WithContext(ctx)); err != nil {
+			log.Error().Err(err)
+			return
 		}
 		return
 	}
@@ -159,16 +173,18 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 
 	plan, err := aggregates.NewIacPlan(obj.PlanId, aggregates.Tofu, historyConfiguration)
 	if err != nil {
-		panic(err) //todo handle it
+		log.Error().Err(err)
+		return
 	}
 
 	plan.AddPlan(iacTerraformPlanJson.GetPlan())
 	plan.AddChanges(iacTerraformPlanJson.GetChanges()...)
 	iac.UpdatePlan(obj.PlanId, vo.Succeed) //optimistic change :)
-	if err = handler.unitOfWork.IacPlan.Add(plan); err != nil {
+	if err = handler.unitOfWork.IacPlan.Add(plan, log.WithContext(ctx)); err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 	}
-	if err = handler.unitOfWork.IacRepository.Update(iac); err != nil {
-		panic(err)
+	if err = handler.unitOfWork.IacRepository.Update(iac, log.WithContext(ctx)); err != nil {
+		log.Error().Err(err)
+		return
 	}
 }

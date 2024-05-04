@@ -3,6 +3,7 @@ package postgres
 import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/mappers"
 	"labraboard/internal/repositories/postgres/models"
@@ -20,7 +21,7 @@ func NewTerraformStateRepository(database *Database) (*TerraformStateRepository,
 	}, nil
 }
 
-func (repo *TerraformStateRepository) Get(id uuid.UUID) (*aggregates.TerraformState, error) {
+func (repo *TerraformStateRepository) Get(id uuid.UUID, ctx context.Context) (*aggregates.TerraformState, error) {
 	state, err := repo.getState(id)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get state")
@@ -29,7 +30,7 @@ func (repo *TerraformStateRepository) Get(id uuid.UUID) (*aggregates.TerraformSt
 	//return aggregates.NewTerraformState(state.ID, state.State, state.CreatedOn, state.ModifyOn, state.Lock)
 }
 
-func (repo *TerraformStateRepository) Add(state *aggregates.TerraformState) error {
+func (repo *TerraformStateRepository) Add(state *aggregates.TerraformState, ctx context.Context) error {
 	model, err := repo.mapper.RevertMap(state)
 	if err != nil {
 		return errors.Wrap(err, "can't map state")
@@ -38,7 +39,7 @@ func (repo *TerraformStateRepository) Add(state *aggregates.TerraformState) erro
 	return result.Error
 }
 
-func (repo *TerraformStateRepository) Update(state *aggregates.TerraformState) error {
+func (repo *TerraformStateRepository) Update(state *aggregates.TerraformState, ctx context.Context) error {
 	s, err := repo.getState(state.GetID())
 	if err != nil {
 		return errors.Wrap(err, "can't get state")
@@ -51,7 +52,7 @@ func (repo *TerraformStateRepository) Update(state *aggregates.TerraformState) e
 	return result.Error
 }
 
-func (repo *TerraformStateRepository) GetAll() []*aggregates.TerraformState {
+func (repo *TerraformStateRepository) GetAll(ctx context.Context) []*aggregates.TerraformState {
 	var dbs []*models.TerraformStateDb
 	repo.database.GormDB.Find(&dbs)
 	states := make([]*aggregates.TerraformState, len(dbs))

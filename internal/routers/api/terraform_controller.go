@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"labraboard/internal/logger"
 	"labraboard/internal/routers/api/dtos"
 	"labraboard/internal/services"
 	"net/http"
@@ -31,15 +32,35 @@ func NewTerraformPlanController(iac *services.IacService) (*TerraformPlanControl
 // @Router /terraform/{projectId}/plan [POST]
 func (c *TerraformPlanController) CreateTerraformPlan(g *gin.Context) {
 	projectId := g.Param("projectId")
+	l := logger.GetWitContext(g).
+		With().
+		Str("projectId", projectId).
+		Logger()
+
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
 
 	var dto dtos.CreatePlan
-	if err := g.BindJSON(&dto); err != nil {
+	if err = g.BindJSON(&dto); err != nil {
+		l.Warn().Err(err)
 		g.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload"})
 	}
 
-	planId, err := c.IacService.RunTerraformPlan(uuid.MustParse(projectId), dto.RepoPath, dto.RepoCommit, dto.RepoCommitType, dto.Variables)
+	var planRunner = services.TerraformPlanRunner{
+		ProjectId:  parsedProjectId,
+		Path:       dto.RepoPath,
+		Sha:        dto.RepoCommit,
+		CommitType: dto.RepoCommitType,
+		Variables:  dto.Variables,
+	}
+	planId, err := c.IacService.RunTerraformPlan(planRunner, l.WithContext(g))
 	if err != nil {
-		g.String(http.StatusBadRequest, err.Error())
+		l.Warn().Err(err)
+		g.String(http.StatusBadRequest, "Cannot trigger the plan")
 		return
 	}
 	g.String(http.StatusOK, planId.String())
@@ -61,7 +82,27 @@ func (c *TerraformPlanController) CreateTerraformPlan(g *gin.Context) {
 func (c *TerraformPlanController) GetTerraformPlan(g *gin.Context) {
 	planId := g.Param("planId")
 	projectId := g.Param("projectId")
-	plan, err := c.IacService.GetPlan(uuid.MustParse(projectId), uuid.MustParse(planId))
+
+	l := logger.GetWitContext(g).
+		With().
+		Str("projectId", projectId).
+		Str("planId", planId).
+		Logger()
+
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+	parsedPlanId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+
+	plan, err := c.IacService.GetPlan(parsedProjectId, parsedPlanId, l.WithContext(g))
 	if err != nil {
 		g.String(http.StatusBadRequest, err.Error())
 		return
@@ -116,7 +157,21 @@ func (c *TerraformPlanController) DeploymentTerraform(g *gin.Context) {
 // @Router /terraform/{projectId}/plan [GET]
 func (c *TerraformPlanController) FetchTerraformPlans(g *gin.Context) {
 	projectId := g.Param("projectId")
-	plans := c.IacService.GetPlans(uuid.MustParse(projectId))
+
+	l := logger.GetWitContext(g).
+		With().
+		Str("projectId", projectId).
+		Logger()
+
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+
+	plans := c.IacService.GetPlans(parsedProjectId, l.WithContext(g))
+
 	dto := make([]*dtos.PlanDto, 0)
 
 	for _, plan := range plans {

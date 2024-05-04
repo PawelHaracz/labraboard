@@ -2,6 +2,7 @@ package iac
 
 import (
 	"github.com/google/uuid"
+	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/models"
 )
@@ -13,7 +14,7 @@ type Plan struct {
 }
 
 type LabraboardIacService interface {
-	Plan(planId uuid.UUID) (*Plan, error)
+	Plan(planId uuid.UUID, ctx context.Context) (*Plan, error) //todo remove it
 }
 
 func (plan *Plan) GetPlan() *aggregates.IacPlan {

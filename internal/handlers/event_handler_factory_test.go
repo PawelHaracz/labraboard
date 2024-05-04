@@ -17,7 +17,6 @@ func TestEventHandlerFactory(t *testing.T) {
 		assert.Error(t, MissingHandlerImplementedFactory, err.Error())
 	})
 	t.Run("Register Event that exist, should return handler", func(t *testing.T) {
-		t.Parallel()
 		act, err := factory.RegisterHandler(events.LEASE_LOCK)
 
 		assert.Equal(t, nil, err)

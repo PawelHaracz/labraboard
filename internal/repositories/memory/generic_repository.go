@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	"sync"
 )
@@ -27,14 +28,14 @@ func NewGenericRepository[T aggregates.Aggregate]() *GenericRepository[T] {
 	}
 }
 
-func (r *GenericRepository[T]) Get(id uuid.UUID) (T, error) {
+func (r *GenericRepository[T]) Get(id uuid.UUID, ctx context.Context) (T, error) {
 	if iac, ok := r.collection[id]; ok {
 		return iac, nil
 	}
 	return getZero[T](), fmt.Errorf("Not found: %w", ErrNotFound)
 }
 
-func (r *GenericRepository[T]) Add(t T) error {
+func (r *GenericRepository[T]) Add(t T, ctx context.Context) error {
 	if r.collection == nil {
 		// Saftey check if customers is not create, shouldn't happen if using the Factory, but you never know
 		r.Lock()
@@ -51,7 +52,7 @@ func (r *GenericRepository[T]) Add(t T) error {
 	return nil
 }
 
-func (r *GenericRepository[T]) Update(t T) error {
+func (r *GenericRepository[T]) Update(t T, ctx context.Context) error {
 	// Make sure Customer is in the repositories
 	if _, ok := r.collection[t.GetID()]; !ok {
 		return fmt.Errorf("Not found: %w", ErrNotFound)
@@ -62,7 +63,7 @@ func (r *GenericRepository[T]) Update(t T) error {
 	return nil
 }
 
-func (r *GenericRepository[T]) GetAll() []T {
+func (r *GenericRepository[T]) GetAll(ctx context.Context) []T {
 	var collection []T
 	for _, item := range r.collection {
 		collection = append(collection, item)

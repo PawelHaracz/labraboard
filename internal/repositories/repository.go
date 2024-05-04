@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"errors"
+	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 
 	"github.com/google/uuid"
@@ -17,8 +18,8 @@ var (
 )
 
 type Repository[T aggregates.Aggregate] interface {
-	Get(uuid.UUID) (T, error)
-	Add(T) error
-	Update(T) error
-	GetAll() []T
+	Get(uuid.UUID, context.Context) (T, error)
+	Add(T, context.Context) error
+	Update(T, context.Context) error
+	GetAll(context.Context) []T
 }

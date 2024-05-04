@@ -2,11 +2,10 @@ package redisEventBus
 
 import (
 	"context"
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 	"labraboard/internal/eventbus/events"
-	"log"
+	"labraboard/internal/logger"
 )
 
 type EventBusConfiguration func(os *EventBus) error
@@ -44,6 +43,7 @@ func WithRedis(redisClient *redis.Client) EventBusConfiguration {
 }
 
 func (r *EventBus) Subscribe(key events.EventName, ctx context.Context) chan []byte {
+	log := logger.GetWitContext(ctx)
 	subscriber := r.redisClient.Subscribe(ctx, string(key))
 
 	item := make(chan []byte)
@@ -53,12 +53,12 @@ func (r *EventBus) Subscribe(key events.EventName, ctx context.Context) chan []b
 			msg, err := subscriber.ReceiveMessage(ctx)
 			if err != nil {
 				// handle error, for example log it and return
-				log.Println(err)
+				log.Error().Err(err)
 				return
 			}
 
 			item <- []byte(msg.Payload)
-			fmt.Println("Received message from " + msg.Channel + " channel.")
+			log.Info().Msgf("Received message from %s channel", msg.Channel)
 		}
 	}()
 
@@ -70,7 +70,9 @@ func (r *EventBus) Unsubscribe(key events.EventName, ch chan []byte, ctx context
 }
 
 func (r *EventBus) Publish(key events.EventName, event events.Event, ctx context.Context) {
+	log := logger.GetWitContext(ctx)
 	if err := r.redisClient.Publish(ctx, string(key), event).Err(); err != nil {
-		panic(err)
+		log.Error().Err(err)
+		return
 	}
 }

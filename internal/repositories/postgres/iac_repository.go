@@ -4,6 +4,7 @@ import (
 	_ "encoding/json"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/mappers"
 	"labraboard/internal/repositories/postgres/models"
@@ -22,7 +23,7 @@ func NewIaCRepository(database *Database) (*IaCRepository, error) {
 	}, nil
 }
 
-func (repo *IaCRepository) Get(id uuid.UUID) (*aggregates.Iac, error) {
+func (repo *IaCRepository) Get(id uuid.UUID, ctx context.Context) (*aggregates.Iac, error) {
 	state, err := repo.getState(id)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get IaC")
@@ -35,7 +36,7 @@ func (repo *IaCRepository) Map(state *models.IaCDb) (*aggregates.Iac, error) {
 	return repo.mapper.Map(state)
 }
 
-func (repo *IaCRepository) Add(iac *aggregates.Iac) error {
+func (repo *IaCRepository) Add(iac *aggregates.Iac, ctx context.Context) error {
 	i, err := repo.mapper.RevertMap(iac)
 	if err != nil {
 		return errors.Wrap(err, "can't map IaC")
@@ -44,7 +45,7 @@ func (repo *IaCRepository) Add(iac *aggregates.Iac) error {
 	return result.Error
 }
 
-func (repo *IaCRepository) Update(iac *aggregates.Iac) error {
+func (repo *IaCRepository) Update(iac *aggregates.Iac, ctx context.Context) error {
 	i, err := repo.mapper.RevertMap(iac)
 	if err != nil {
 		return errors.Wrap(err, "can't map IaC")
@@ -62,7 +63,7 @@ func (repo *IaCRepository) Update(iac *aggregates.Iac) error {
 	return result.Error
 }
 
-func (repo *IaCRepository) GetAll() []*aggregates.Iac {
+func (repo *IaCRepository) GetAll(ctx context.Context) []*aggregates.Iac {
 
 	var dbs []*models.IaCDb
 	repo.database.GormDB.Find(&dbs)
