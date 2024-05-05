@@ -47,7 +47,7 @@ func (handler *terraformStateLeaseLockHandler) handle(event events.LeasedLock, c
 		log.Warn().Msg("wrong event type")
 		return
 	}
-	item, err := handler.unitOfWork.TerraformStateDbRepository.Get(event.Id, ctx)
+	item, err := handler.unitOfWork.TerraformStateDbRepository.Get(event.Id, log.WithContext(ctx))
 	if err != nil {
 		log.Error().Err(err)
 	}

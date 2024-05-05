@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"labraboard/internal/entities"
 	"labraboard/internal/helpers"
+	"labraboard/internal/logger"
 	"labraboard/internal/models"
 )
 
@@ -50,7 +51,6 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 	err = tf.Init(context.Background(), config...)
 	if err != nil {
 		return nil, err
-		//log.Fatalf("error running Init: %s", err)
 	}
 
 	serializer := helpers.NewSerializer[entities.IacTerraformPlanJson]()
@@ -63,6 +63,7 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 }
 
 func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx context.Context) (*models.IacTerraformPlanJson, error) {
+	log := logger.GetWitContext(ctx)
 	var b bytes.Buffer
 	var planPath = "plan.tfplan"
 	jsonWriter := bufio.NewWriter(&b)
@@ -84,10 +85,9 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 			return nil, err
 		}
 	}
-
+	log.Info().Msg("Running plan")
 	p, err := svc.tf.PlanJSON(context.Background(), jsonWriter, planConfig...)
-	//p, err := svc.tf.PlanJSON(context.Background(), jsonWriter)
-	//p, err := svc.tf.Plan(context.Background(), planConfig...)
+	log.Info().Msg("finished running plan")
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", "error running Plan", err)
 
@@ -106,18 +106,13 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 		return nil, errors.New("error running Flush")
 	}
 	r := bytes.NewReader(b.Bytes())
-	//todo move this 6 lines as a separate aggregate
+
 	iacPlanDeserialized, err := svc.serializer.DeserializeJsonl(r)
 	if err != nil {
 		return nil, errors.New("Cannot reade plan")
 	}
 
 	planChanges := models.NewIacTerraformPlanJson(jsonPlan, iacPlanDeserialized)
-	//iacPlan, err := aggregates.NewIacPlan(planId, aggregates.Tofu, jsonPlan, nil, nil)
-
-	//if err != nil {
-	//	return nil, errors.New("Cannot create aggregate")
-	//}
 
 	return planChanges, nil
 }

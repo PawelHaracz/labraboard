@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/google/uuid"
+	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	m "labraboard/internal/eventbus/memory"
 	"labraboard/internal/models"
@@ -12,6 +13,7 @@ import (
 )
 
 func TestNewIacService(t *testing.T) {
+	ctx := context.Background()
 	uow, err := repositories.NewUnitOfWork(
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.Iac]()),
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.IacPlan]()),
@@ -42,7 +44,7 @@ func TestNewIacService(t *testing.T) {
 	}
 
 	aggregate, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform, make([]*valueobjects.Plans, 0), make([]*valueobjects.IaCEnv, 0), nil, make([]*valueobjects.IaCVariable, 0))
-	err = is.unitOfWork.IacRepository.Add(aggregate)
+	err = is.unitOfWork.IacRepository.Add(aggregate, ctx)
 
 	if err != nil {
 		t.Errorf("error during adding item: %v", err)
@@ -50,6 +52,7 @@ func TestNewIacService(t *testing.T) {
 }
 
 func TestIacService_RunTerraformPlan(t *testing.T) {
+	ctx := context.Background()
 	uow, err := repositories.NewUnitOfWork(
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.Iac]()),
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.IacPlan]()),
@@ -80,9 +83,12 @@ func TestIacService_RunTerraformPlan(t *testing.T) {
 	}
 
 	aggregate, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform, make([]*valueobjects.Plans, 0), make([]*valueobjects.IaCEnv, 0), nil, make([]*valueobjects.IaCVariable, 0))
-	err = is.unitOfWork.IacRepository.Add(aggregate)
+	err = is.unitOfWork.IacRepository.Add(aggregate, ctx)
 
-	planId, err := is.RunTerraformPlan(aggregate.GetID(), "", "", models.SHA, nil)
+	runner := TerraformPlanRunner{
+		aggregate.GetID(), "", "", models.SHA, nil,
+	}
+	planId, err := is.RunTerraformPlan(runner, ctx)
 
 	if planId == uuid.Nil {
 		t.Errorf("error: %v details: %v", "planId is nil", err)
