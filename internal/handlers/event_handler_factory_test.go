@@ -7,7 +7,7 @@ import (
 )
 
 func TestEventHandlerFactory(t *testing.T) {
-	var factory = NewEventHandlerFactory(nil, nil)
+	var factory = NewEventHandlerFactory(nil, nil, nil)
 	t.Run("Register Event that doesn't exist, should return null", func(t *testing.T) {
 		t.Parallel()
 		var Z events.EventName = "Z"

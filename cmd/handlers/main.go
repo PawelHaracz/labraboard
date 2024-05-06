@@ -70,7 +70,7 @@ func main() {
 		panic(err)
 	}
 
-	handlerFactory := handlers.NewEventHandlerFactory(eventBus, uow)
+	handlerFactory := handlers.NewEventHandlerFactory(eventBus, eventBus, uow)
 
 	allHandlers, err := handlerFactory.RegisterAllHandlers()
 	if err != nil {

@@ -17,13 +17,15 @@ type EventHandlerFactory struct {
 	eventSubscriber eb.EventSubscriber
 	unitOfWork      *repositories.UnitOfWork
 	allowedEvents   []events.EventName
+	eventPublisher  eb.EventPublisher
 }
 
-func NewEventHandlerFactory(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) *EventHandlerFactory {
+func NewEventHandlerFactory(eventSubscriber eb.EventSubscriber, eventPublisher eb.EventPublisher, unitOfWork *repositories.UnitOfWork) *EventHandlerFactory {
 	return &EventHandlerFactory{
 		eventSubscriber: eventSubscriber,
 		unitOfWork:      unitOfWork,
-		allowedEvents:   []events.EventName{events.LEASE_LOCK, events.TRIGGERED_PLAN},
+		eventPublisher:  eventPublisher,
+		allowedEvents:   []events.EventName{events.LEASE_LOCK, events.TRIGGERED_PLAN, events.SCHEDULED_PLAN},
 	}
 }
 
@@ -38,6 +40,9 @@ func (factory *EventHandlerFactory) RegisterHandler(event events.EventName) (Eve
 	case events.TRIGGERED_PLAN:
 		factory.allowedEvents = helpers.Remove(factory.allowedEvents, event)
 		return newTriggeredPlanHandler(factory.eventSubscriber, factory.unitOfWork)
+	case events.SCHEDULED_PLAN:
+		factory.allowedEvents = helpers.Remove(factory.allowedEvents, event)
+		return newScheduledPlanHandler(factory.eventSubscriber, factory.unitOfWork, factory.eventPublisher)
 	}
 	return nil, MissingHandlerImplementedFactory
 }

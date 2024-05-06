@@ -137,6 +137,6 @@ func (dt *delayTask) Publish(EventName events.EventName, Content events.Event, W
 	}
 	_, err = dt.client.ZAdd(ctx, delayedList, member).Result()
 	if err != nil {
-		fmt.Println(err)
+		log.Error().Err(err)
 	}
 }

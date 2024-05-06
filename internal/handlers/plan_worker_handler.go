@@ -40,7 +40,7 @@ func (handler *triggeredPlanHandler) Handle(ctx context.Context) {
 			if err != nil {
 				log.Error().Err(fmt.Errorf("cannot handle message type %T", event))
 			}
-			fmt.Println("Received message:", msg)
+			log.Info().Msgf("Received message: %s", msg)
 			handler.handlePlanTriggered(event, log.WithContext(ctx))
 		}
 	}()
@@ -151,7 +151,7 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		log.Error().Err(err)
 		return
 	}
-
+	//todo fix reading variables and envs
 	iacTerraformPlanJson, err := tofu.Plan(iac.GetEnvs(false), iac.GetVariables(), log.WithContext(ctx))
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
@@ -162,13 +162,13 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		}
 		return
 	}
-
+	//todo redesing procces of creating plan
 	historyConfiguration := &iacPlans.HistoryProjectConfig{
 		GitSha:   commitSha,
 		GitPath:  repoBranch,
 		GitUrl:   repoUrl,
 		Envs:     iac.GetEnvs(true),
-		Variable: iac.GetVariables(),
+		Variable: iac.GetVariableMap(),
 	}
 
 	plan, err := aggregates.NewIacPlan(obj.PlanId, aggregates.Tofu, historyConfiguration)
