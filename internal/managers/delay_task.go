@@ -119,13 +119,13 @@ func (dt *delayTask) Listen(ctx context.Context) {
 }
 
 func (dt *delayTask) Publish(EventName events.EventName, Content events.Event, WaitTime time.Duration, ctx context.Context) {
-	task := &task{
+	t := &task{
 		EventName,
 		Content,
 		WaitTime,
 	}
 	log := logger.GetWitContext(ctx)
-	jsonValue, err := json.Marshal(task)
+	jsonValue, err := json.Marshal(t)
 	if err != nil {
 		log.Error().Err(err).Msg("JSON!!!")
 		return
@@ -135,7 +135,7 @@ func (dt *delayTask) Publish(EventName events.EventName, Content events.Event, W
 		Score:  float64(taskReadyInSeconds),
 		Member: jsonValue,
 	}
-	_, err = dt.client.ZAdd(ctx, delayedList, member).Result()
+	_, err = dt.client.ZAdd(log.WithContext(ctx), delayedList, member).Result()
 	if err != nil {
 		log.Error().Err(err)
 	}

@@ -73,6 +73,11 @@ definitions:
       status:
         type: string
     type: object
+  dtos.SchedulePlan:
+    properties:
+      when:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -353,6 +358,39 @@ paths:
           schema:
             $ref: '#/definitions/dtos.PlanWithOutputDto'
       summary: Method returns the terraform plan output for a given plan id
+      tags:
+      - terraform
+    post:
+      consumes:
+      - application/json
+      description: do ping
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: plan id
+        in: path
+        name: planId
+        required: true
+        type: string
+      - description: Schedule plan
+        in: body
+        name: schedulePlan
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.SchedulePlan'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.PlanDto'
+            type: array
+      summary: Fetch all the terraform plans for a given project
       tags:
       - terraform
   /terraform/{projectId}/plan/{planId}/apply:

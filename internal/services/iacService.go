@@ -2,16 +2,19 @@ package services
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
 	"labraboard/internal/logger"
+	"labraboard/internal/managers"
 	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	"labraboard/internal/routers/api/dtos"
 	vo "labraboard/internal/valueobjects"
+	"time"
 )
 
 type TerraformPlanRunner struct {
@@ -25,8 +28,9 @@ type TerraformPlanRunner struct {
 type IacConfiguration func(os *IacService) error
 
 type IacService struct {
-	publisher  eventbus.EventPublisher
-	unitOfWork *repositories.UnitOfWork
+	publisher                 eventbus.EventPublisher
+	unitOfWork                *repositories.UnitOfWork
+	delayTaskManagerPublisher managers.DelayTaskManagerPublisher
 }
 
 func NewIacService(configs ...IacConfiguration) (*IacService, error) {
@@ -41,7 +45,10 @@ func NewIacService(configs ...IacConfiguration) (*IacService, error) {
 		return nil, errors.New("publisher is not set")
 	}
 	if is.unitOfWork == nil {
-		return nil, errors.New("Unit of Work is not set")
+		return nil, errors.New("unit of Work is not set")
+	}
+	if is.delayTaskManagerPublisher == nil {
+		return nil, errors.New("delay task manager publisher is not set")
 	}
 
 	return is, nil
@@ -57,6 +64,13 @@ func WithEventBus(eb eventbus.EventPublisher) IacConfiguration {
 func WithUnitOfWork(r *repositories.UnitOfWork) IacConfiguration {
 	return func(is *IacService) error {
 		is.unitOfWork = r
+		return nil
+	}
+}
+
+func WithDelayTaskManagerPublisher(delayTaskManagerPublisher managers.DelayTaskManagerPublisher) IacConfiguration {
+	return func(is *IacService) error {
+		is.delayTaskManagerPublisher = delayTaskManagerPublisher
 		return nil
 	}
 }
@@ -222,4 +236,32 @@ func (svc *IacService) RemoveVariable(projectId uuid.UUID, name string, ctx cont
 	}
 
 	return svc.unitOfWork.IacRepository.Update(iac, ctx)
+}
+
+func (svc *IacService) SchedulePlan(projectId uuid.UUID, planId uuid.UUID, when time.Time, ctx context.Context) error {
+	l := logger.GetWitContext(ctx).With().Time("when", when).Logger()
+	if _, err := svc.unitOfWork.IacRepository.Get(projectId, ctx); err != nil {
+		l.Error().Err(err)
+		return errors.Wrap(err, fmt.Sprintf("Project doesn't exist: %s", projectId))
+	}
+	if _, err := svc.unitOfWork.IacPlan.Get(planId, ctx); err != nil {
+		l.Warn().Err(err)
+		return errors.Wrap(err, fmt.Sprintf("Plan doesn't exist: %s, please first run plan", planId))
+	}
+	now := time.Now()
+	hasFuture := now.After(when)
+	if !hasFuture {
+		err := errors.New(fmt.Sprint("you cannot use time in past for schedule"))
+		l.Warn().Err(err)
+		return err
+	}
+	svc.delayTaskManagerPublisher.Publish(events.SCHEDULED_PLAN,
+		events.ScheduledPlan{
+			ProjectId: projectId,
+			PlanId:    planId,
+			When:      when,
+		},
+		when.Sub(now),
+		l.WithContext(ctx))
+	return nil
 }

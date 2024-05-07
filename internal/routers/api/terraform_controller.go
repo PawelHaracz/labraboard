@@ -182,3 +182,55 @@ func (c *TerraformPlanController) FetchTerraformPlans(g *gin.Context) {
 	}
 	g.JSON(http.StatusOK, dto)
 }
+
+// SchedulePlan
+// @BasePath /api/v1
+// @Summary Fetch all the terraform plans for a given project
+// @Schemes http
+// @Param projectId path string true "project id"
+// @Param planId path string true "plan id"
+// @Param schedulePlan body dtos.SchedulePlan true "Schedule plan"
+// @Description do ping
+// @Tags terraform
+// @Accept json
+// @Produce json
+// @Success 200 {array} dtos.PlanDto
+// @Router /terraform/{projectId}/plan/{planId} [POST]
+func (c *TerraformPlanController) SchedulePlan(g *gin.Context) {
+	planId := g.Param("planId")
+	projectId := g.Param("projectId")
+
+	l := logger.GetWitContext(g).
+		With().
+		Str("projectId", projectId).
+		Str("planId", planId).
+		Logger()
+
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+	parsedPlanId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+
+	var dto dtos.SchedulePlan
+	if err = g.BindJSON(&dto); err != nil {
+		l.Warn().Err(err)
+		g.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload"})
+		return
+	}
+
+	if err = c.IacService.SchedulePlan(parsedProjectId, parsedPlanId, dto.When, l.WithContext(g)); err != nil {
+		l.Warn().Err(err)
+		g.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	g.JSON(http.StatusOK, dto)
+}

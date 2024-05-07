@@ -2,6 +2,7 @@ package dtos
 
 import (
 	"github.com/google/uuid"
+	"time"
 )
 
 type CreateProjectDto struct {
@@ -23,4 +24,8 @@ type GetProjectDto struct {
 	TerraformPath    string            `json:"repositoryTerraformPath"`
 	Envs             map[string]string `json:"envs"`
 	Variables        map[string]string `json:"variables"`
+}
+
+type SchedulePlan struct {
+	When time.Time `json:"when"`
 }

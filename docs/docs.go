@@ -434,6 +434,55 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "do ping",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "terraform"
+                ],
+                "summary": "Fetch all the terraform plans for a given project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "project id",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "plan id",
+                        "name": "planId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Schedule plan",
+                        "name": "schedulePlan",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.SchedulePlan"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dtos.PlanDto"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/terraform/{projectId}/plan/{planId}/apply": {
@@ -633,6 +682,14 @@ const docTemplate = `{
                 },
                 "outputs": {},
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "dtos.SchedulePlan": {
+            "type": "object",
+            "properties": {
+                "when": {
                     "type": "string"
                 }
             }

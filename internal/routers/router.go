@@ -22,7 +22,9 @@ func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.Unit
 
 	iac, err := services.NewIacService(
 		services.WithEventBus(publisher),
-		services.WithUnitOfWork(unitOfWork))
+		services.WithUnitOfWork(unitOfWork),
+		services.WithDelayTaskManagerPublisher(delayTaskManagerPublisher),
+	)
 
 	if err != nil {
 		panic(err)

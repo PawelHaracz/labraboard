@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	m "labraboard/internal/eventbus/memory"
+	"labraboard/internal/managers"
 	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	"labraboard/internal/repositories/memory"
@@ -25,7 +26,8 @@ func TestNewIacService(t *testing.T) {
 
 	is, err := NewIacService(
 		WithEventBus(m.NewMemoryEventBus()),
-		WithUnitOfWork(uow))
+		WithUnitOfWork(uow),
+		WithDelayTaskManagerPublisher(managers.NewMemoryDelayTask()))
 
 	if err != nil {
 		t.Errorf("error: %v", err)
@@ -64,7 +66,8 @@ func TestIacService_RunTerraformPlan(t *testing.T) {
 
 	is, err := NewIacService(
 		WithEventBus(m.NewMemoryEventBus()),
-		WithUnitOfWork(uow))
+		WithUnitOfWork(uow),
+		WithDelayTaskManagerPublisher(managers.NewMemoryDelayTask()))
 
 	if err != nil {
 		t.Errorf("error: %v", err)
