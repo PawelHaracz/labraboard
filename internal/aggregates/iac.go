@@ -105,7 +105,7 @@ func (receiver *Iac) GetEnvs(hideSecret bool) map[string]string {
 	var envs = map[string]string{}
 	for _, env := range receiver.envs {
 		if hideSecret && env.HasSecret {
-			envs[env.Name] = "***"
+			envs[env.Name] = vo.SECRET_VALUE_HASH
 		} else {
 			envs[env.Name] = env.Value
 		}

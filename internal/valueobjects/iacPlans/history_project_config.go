@@ -1,9 +1,11 @@
 package iacPlans
 
+import "labraboard/internal/valueobjects"
+
 type HistoryProjectConfig struct {
 	GitSha   string
 	GitUrl   string
 	GitPath  string
-	Envs     map[string]string //fixit todo: change to IaCEnv
+	Envs     []valueobjects.IaCEnv
 	Variable map[string]string
 }

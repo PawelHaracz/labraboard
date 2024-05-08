@@ -107,7 +107,8 @@ func (svc *IacService) RunTerraformPlan(runner TerraformPlanRunner, ctx context.
 			Type: runner.CommitType,
 			Name: runner.Sha,
 		},
-		Variables: runner.Variables,
+		Variables:    runner.Variables,
+		EnvVariables: iac.GetEnvs(false),
 	}
 
 	svc.publisher.Publish(events.TRIGGERED_PLAN, event, ctx)

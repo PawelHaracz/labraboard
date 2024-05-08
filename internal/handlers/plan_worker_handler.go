@@ -162,12 +162,24 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		}
 		return
 	}
+
+	envs := iac.GetEnvs(true)
+	historyEnvs := make([]vo.IaCEnv, len(envs))
+	i := 0
+	for key, value := range envs {
+		historyEnvs[i] = vo.IaCEnv{
+			Name:      key,
+			Value:     value,
+			HasSecret: value == vo.SECRET_VALUE_HASH,
+		}
+	}
+
 	//todo redesing procces of creating plan
 	historyConfiguration := &iacPlans.HistoryProjectConfig{
 		GitSha:   commitSha,
 		GitPath:  repoBranch,
 		GitUrl:   repoUrl,
-		Envs:     iac.GetEnvs(true),
+		Envs:     historyEnvs,
 		Variable: iac.GetVariableMap(),
 	}
 
