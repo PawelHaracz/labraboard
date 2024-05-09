@@ -7,7 +7,6 @@ import (
 	"labraboard/internal/repositories"
 )
 
-//todo implement generic one handler with object instead multiple
 import (
 	"context"
 	"encoding/json"
