@@ -18,6 +18,7 @@ import (
 	"os"
 )
 
+// /todo redesing how to treat plan aggregate to keep whole runs history
 type triggeredPlanHandler struct {
 	eventSubscriber eb.EventSubscriber
 	unitOfWork      *repositories.UnitOfWork
@@ -151,8 +152,34 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		log.Error().Err(err)
 		return
 	}
-	//todo fix reading variables and envs
-	iacTerraformPlanJson, err := tofu.Plan(iac.GetEnvs(false), iac.GetVariables(), log.WithContext(ctx))
+	envVariables := obj.EnvVariables
+	allCurrentEnvs := iac.GetEnvs(false)
+
+	if envVariables == nil || len(envVariables) == 0 {
+		envVariables = allCurrentEnvs
+	}
+
+	for key, val := range envVariables {
+		if val == vo.SECRET_VALUE_HASH {
+			secret, ok := allCurrentEnvs[key]
+			if ok {
+				envVariables[key] = secret
+			}
+		}
+	}
+	var variableMap map[string]string
+	if obj.Variables != nil || len(obj.Variables) != 0 {
+		variableMap = obj.Variables
+	} else {
+		variableMap = iac.GetVariables()
+	}
+
+	var variables []string
+	for key, value := range variableMap {
+		variables = append(variables, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	iacTerraformPlanJson, err := tofu.Plan(envVariables, variables, log.WithContext(ctx))
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		log.Error().Err(err)
@@ -163,7 +190,12 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		return
 	}
 
-	envs := iac.GetEnvs(true)
+	var envs map[string]string
+	if obj.Variables != nil || len(obj.Variables) != 0 {
+		envs = obj.EnvVariables
+	} else {
+		envs = iac.GetEnvs(true)
+	}
 	historyEnvs := make([]vo.IaCEnv, len(envs))
 	i := 0
 	for key, value := range envs {
@@ -174,23 +206,25 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		}
 	}
 
-	//todo redesing procces of creating plan
-	historyConfiguration := &iacPlans.HistoryProjectConfig{
-		GitSha:   commitSha,
-		GitPath:  repoBranch,
-		GitUrl:   repoUrl,
-		Envs:     historyEnvs,
-		Variable: iac.GetVariableMap(),
-	}
-
-	plan, err := aggregates.NewIacPlan(obj.PlanId, aggregates.Tofu, historyConfiguration)
+	plan, err := handler.unitOfWork.IacPlan.Get(obj.PlanId, log.WithContext(ctx))
 	if err != nil {
-		log.Error().Err(err)
-		return
-	}
+		historyConfiguration := &iacPlans.HistoryProjectConfig{
+			GitSha:   commitSha,
+			GitPath:  repoBranch,
+			GitUrl:   repoUrl,
+			Envs:     historyEnvs,
+			Variable: iac.GetVariableMap(),
+		}
 
+		plan, err = aggregates.NewIacPlan(obj.PlanId, aggregates.Tofu, historyConfiguration)
+		if err != nil {
+			log.Error().Err(err)
+			return
+		}
+	}
 	plan.AddPlan(iacTerraformPlanJson.GetPlan())
 	plan.AddChanges(iacTerraformPlanJson.GetChanges()...)
+
 	iac.UpdatePlan(obj.PlanId, vo.Succeed) //optimistic change :)
 	if err = handler.unitOfWork.IacPlan.Add(plan, log.WithContext(ctx)); err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)

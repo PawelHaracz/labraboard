@@ -113,10 +113,10 @@ func (receiver *Iac) GetEnvs(hideSecret bool) map[string]string {
 	return envs
 }
 
-func (receiver *Iac) GetVariables() []string {
-	var variables []string
+func (receiver *Iac) GetVariables() map[string]string {
+	var variables map[string]string
 	for _, variable := range receiver.variables {
-		variables = append(variables, fmt.Sprintf("%s=%s", variable.Name, variable.Value))
+		variables[variable.Name] = variable.Value
 	}
 	return variables
 }
