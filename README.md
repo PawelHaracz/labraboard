@@ -18,6 +18,11 @@ With Labraboard, you can efficiently manage your infrastructure and streamline y
 Swagger docs has to be updated to reflect the new endpoints. 
 It can be done by using command line `swag init -g ./cmd/api/main.go -o ./docs`
 
+## Swagger Page
+[Swagger API link](https://api.labraboard.dev)
+
+Upps here should be demo video - no worry, I will be soon! - Now check the API on [https://api.labraboard.dev](https://api.labraboard.dev)
+
 ### Checking changes 
 `git log --pretty=format:"%h%x09%an%x09%ad%x09%s"`
 
