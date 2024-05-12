@@ -76,6 +76,7 @@ Solution uses own delivered http backend where state is kept. During running pla
 added automatically by overriding the backend. 
 
 #### Example of using own http Backend
+please use your project id. Application use it identify terraform state.
 ```hcl
 terraform {
   backend "http" {
