@@ -360,39 +360,6 @@ paths:
       summary: Method returns the terraform plan output for a given plan id
       tags:
       - terraform
-    post:
-      consumes:
-      - application/json
-      description: do ping
-      parameters:
-      - description: project id
-        in: path
-        name: projectId
-        required: true
-        type: string
-      - description: plan id
-        in: path
-        name: planId
-        required: true
-        type: string
-      - description: Schedule plan
-        in: body
-        name: schedulePlan
-        required: true
-        schema:
-          $ref: '#/definitions/dtos.SchedulePlan'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dtos.PlanDto'
-            type: array
-      summary: Fetch all the terraform plans for a given project
-      tags:
-      - terraform
   /terraform/{projectId}/plan/{planId}/apply:
     post:
       consumes:
@@ -448,6 +415,40 @@ paths:
           schema:
             type: string
       summary: Method to fetch deployment status for a given deployment id
+      tags:
+      - terraform
+  /terraform/{projectId}/plan/{planId}/schedule:
+    post:
+      consumes:
+      - application/json
+      description: do ping
+      parameters:
+      - description: project id
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: plan id
+        in: path
+        name: planId
+        required: true
+        type: string
+      - description: Schedule plan
+        in: body
+        name: schedulePlan
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.SchedulePlan'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dtos.PlanDto'
+            type: array
+      summary: Fetch all the terraform plans for a given project
       tags:
       - terraform
 swagger: "2.0"

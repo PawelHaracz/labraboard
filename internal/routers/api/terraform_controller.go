@@ -195,7 +195,7 @@ func (c *TerraformPlanController) FetchTerraformPlans(g *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {array} dtos.PlanDto
-// @Router /terraform/{projectId}/plan/{planId} [POST]
+// @Router /terraform/{projectId}/plan/{planId}/schedule [POST]
 func (c *TerraformPlanController) SchedulePlan(g *gin.Context) {
 	planId := g.Param("planId")
 	projectId := g.Param("projectId")
@@ -231,6 +231,5 @@ func (c *TerraformPlanController) SchedulePlan(g *gin.Context) {
 		g.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-
 	g.JSON(http.StatusOK, dto)
 }

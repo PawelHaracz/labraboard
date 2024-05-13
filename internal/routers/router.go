@@ -65,6 +65,7 @@ func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.Unit
 		tf := v1.Group("/terraform/:projectId/plan/")
 		{
 			tf.GET("/:planId", tfController.GetTerraformPlan)
+			tf.POST("/:planId/schedule", tfController.SchedulePlan)
 			tf.GET("/", tfController.FetchTerraformPlans)
 			tf.POST("/", tfController.CreateTerraformPlan)
 			tf.POST("/:planId/apply", tfController.ApplyTerraformPlan)

@@ -56,7 +56,7 @@ Upps here should be demo video - no worry, I will be soon! - Now check the API o
   - [X] Replace all print to logger
   - [X] Add every method ctx to enrich logger
   - [X] Integrate handlers to use logger
-- [ ] Handle scheduled plan in TerraformPlanner
+- [X] Handle scheduled plan in TerraformPlanner
 - [ ] Run plan using http backend 
 - [ ] Access Token for Backend http
 - [ ] Clean solution to be more DDD

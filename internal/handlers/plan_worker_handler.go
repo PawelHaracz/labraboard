@@ -71,6 +71,7 @@ func createBackendFile(path string, statePath string) error {
 func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggered, ctx context.Context) {
 	log := logger.GetWitContext(ctx).With().Str("planId", obj.PlanId.String()).Str("projectId", obj.ProjectId.String()).Logger()
 	iac, err := handler.unitOfWork.IacRepository.Get(obj.ProjectId, log.WithContext(ctx))
+
 	if err != nil {
 		log.Error().Err(err)
 		return
