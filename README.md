@@ -71,6 +71,10 @@ Upps here should be demo video - no worry, I will be soon! - Now check the API o
 - [ ] Add a web interface
 - [ ] Encryption at rest
 
+### Architecture 
+#### Event Storming 
+[Labraboard Event storming](https://miro.com/app/board/uXjVKHzpuQ4=/?share_link_id=741994614357)
+
 ### Http Backend
 Solution uses own delivered http backend where state is kept. During running plan or apply the backend configuration is 
 added automatically by overriding the backend. 
