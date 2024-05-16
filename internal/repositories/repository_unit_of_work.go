@@ -29,7 +29,6 @@ func NewUnitOfWork(configs ...UnitOfWorkConfiguration) (*UnitOfWork, error) {
 	if uow.IacRepository == nil {
 		return nil, errors.New("iac Repository is not set")
 	}
-
 	if uow.IacPlan == nil {
 		return nil, errors.New("iac plan Repository is not set")
 	}
