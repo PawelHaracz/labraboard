@@ -27,4 +27,4 @@ RUN chmod +x ./main
 RUN addgroup --system runner && adduser --system --no-create-home --disabled-password runner && adduser runner runner
 USER runner
 EXPOSE 8080
-ENTRYPOINT ["./main"]
+ENTRYPOINT ["./cmd/api/main"]
