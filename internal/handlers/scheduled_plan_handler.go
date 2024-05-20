@@ -56,6 +56,12 @@ func (handler *scheduledPlanHandler) handle(event events.ScheduledPlan, ctx cont
 		return
 	}
 	log.Info().Msg("publishing event run plan")
+
+	var envs map[string]string
+	for _, env := range plan.HistoryConfig.Envs {
+		envs[env.Name] = env.Value
+	}
+
 	handler.publisher.Publish(events.TRIGGERED_PLAN,
 		events.PlanTriggered{
 			ProjectId: event.ProjectId,
@@ -66,7 +72,7 @@ func (handler *scheduledPlanHandler) handle(event events.ScheduledPlan, ctx cont
 				Name: plan.HistoryConfig.GitSha,
 			},
 			Variables:    plan.HistoryConfig.Variable,
-			EnvVariables: plan.HistoryConfig.Envs,
+			EnvVariables: envs,
 		},
 		log.WithContext(ctx))
 	log.Info().Msg("published event run plan")
