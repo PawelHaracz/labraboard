@@ -21,7 +21,7 @@ COPY --from=build /app/build/main ./
 RUN apk --no-cache add ca-certificates tzdata
 
 # Set exec permision
-RUN chmod +x ./main
+RUN chmod +x ./cmd/api/main
 
 # Run binary as non-root
 RUN addgroup --system runner && adduser --system --no-create-home --disabled-password runner && adduser runner runner
