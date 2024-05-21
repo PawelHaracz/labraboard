@@ -266,3 +266,30 @@ func (svc *IacService) SchedulePlan(projectId uuid.UUID, planId uuid.UUID, when 
 		l.WithContext(ctx))
 	return nil
 }
+
+func (svc *IacService) ScheduleApply(projectId uuid.UUID, planId uuid.UUID, ctx context.Context) (uuid.UUID, error) {
+	l := logger.GetWitContext(ctx).With().Logger()
+	l.Info().Msg("Starting applying")
+
+	if _, err := svc.unitOfWork.IacRepository.Get(projectId, ctx); err != nil {
+		l.Error().Err(err)
+		return uuid.Nil, errors.Wrap(err, fmt.Sprintf("Project doesn't exist: %s", projectId))
+	}
+	if _, err := svc.unitOfWork.IacPlan.Get(planId, ctx); err != nil {
+		l.Warn().Err(err)
+		return uuid.Nil, errors.Wrap(err, fmt.Sprintf("Plan doesn't exist: %s, please first run plan", planId))
+	}
+
+	var changeId = uuid.New()
+	var event = &events.IacApplied{
+		ChangeId:  changeId,
+		ProjectId: projectId,
+		PlanId:    planId,
+		IacType:   aggregates.Terraform,
+		Owner:     "Anonymous",
+	}
+
+	svc.publisher.Publish(events.IAC_APPLY_SCHEDULED, event, ctx)
+
+	return changeId, nil
+}

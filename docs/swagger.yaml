@@ -380,9 +380,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Change Id
           schema:
-            type: string
+            type: struct
       summary: Method Apply changes for a given plan id return deployment id
       tags:
       - terraform

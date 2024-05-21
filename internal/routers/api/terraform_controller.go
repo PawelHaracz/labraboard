@@ -121,9 +121,37 @@ func (c *TerraformPlanController) GetTerraformPlan(g *gin.Context) {
 // @Tags terraform
 // @Accept json
 // @Produce json
-// @Success 200 {string} ApplyTerraformPlan
+// @Success 200 {struct} uuid.UUID "Change Id"
 // @Router /terraform/{projectId}/plan/{planId}/apply [POST]
 func (c *TerraformPlanController) ApplyTerraformPlan(g *gin.Context) {
+	planId := g.Param("planId")
+	projectId := g.Param("projectId")
+
+	l := logger.GetWitContext(g).
+		With().
+		Str("projectId", projectId).
+		Str("planId", planId).
+		Logger()
+
+	parsedProjectId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+	parsedPlanId, err := uuid.Parse(projectId)
+	if err != nil {
+		l.Warn().Err(err).Msg("cannot parsed uuid")
+		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
+		return
+	}
+
+	if changeId, err := c.IacService.ScheduleApply(parsedProjectId, parsedPlanId, l.WithContext(g)); err != nil {
+		l.Warn().Err(err).Msg("failed run apply")
+		g.JSON(http.StatusInternalServerError, gin.H{"message": "Cannot apply changes"})
+	} else {
+		g.JSON(http.StatusOK, changeId)
+	}
 
 }
 

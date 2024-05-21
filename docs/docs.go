@@ -467,9 +467,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Change Id",
                         "schema": {
-                            "type": "string"
+                            "type": "struct"
                         }
                     }
                 }
