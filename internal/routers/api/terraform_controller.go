@@ -121,7 +121,7 @@ func (c *TerraformPlanController) GetTerraformPlan(g *gin.Context) {
 // @Tags terraform
 // @Accept json
 // @Produce json
-// @Success 200 {struct} uuid.UUID "Change Id"
+// @Success 200 {string} uuid.UUID "Change Id"
 // @Router /terraform/{projectId}/plan/{planId}/apply [POST]
 func (c *TerraformPlanController) ApplyTerraformPlan(g *gin.Context) {
 	planId := g.Param("planId")

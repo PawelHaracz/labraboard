@@ -469,7 +469,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Change Id",
                         "schema": {
-                            "type": "struct"
+                            "type": "string"
                         }
                     }
                 }

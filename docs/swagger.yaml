@@ -382,7 +382,7 @@ paths:
         "200":
           description: Change Id
           schema:
-            type: struct
+            type: string
       summary: Method Apply changes for a given plan id return deployment id
       tags:
       - terraform

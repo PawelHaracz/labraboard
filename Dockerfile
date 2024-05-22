@@ -11,20 +11,32 @@ RUN go mod download && go mod verify
 COPY . .
 
 # App binary without CGO_ENABLED
-RUN CGO_ENABLED=0 GOOS=linux go build /app/build/cmd/main.go
+ENV CGO_ENABLED=0 GOOS=linux
+
+# Find and build all main.go files
+RUN for file in $(find /app/build/cmd -name main.go); do \
+        go build -o /app/build/bin/$(dirname $file | xargs basename) $file; \
+    done
 
 FROM alpine:edge
 WORKDIR /app
 
-COPY --from=build /app/build/main ./
+COPY entrypoint.sh entrypoint.sh
+
+#COPY --from=build /app/build/cmd/ ./
+COPY --from=build /app/build/bin/ /app/
+
 # Set the timezone and install CA certificates
 RUN apk --no-cache add ca-certificates tzdata
 
 # Set exec permision
-RUN chmod +x ./cmd/api/main
+RUN find /app -type f -exec chmod +x {} \;
 
 # Run binary as non-root
 RUN addgroup --system runner && adduser --system --no-create-home --disabled-password runner && adduser runner runner
 USER runner
 EXPOSE 8080
-ENTRYPOINT ["./cmd/api/main"]
+
+ENTRYPOINT ["sh", "./entrypoint.sh"]
+CMD ["./api" ]
+#ENTRYPOINT ["./cmd/api/main"]

@@ -34,6 +34,21 @@ services:
     links:
       - db
       - cache
+  handlers:
+    command: ./handlers
+    build:
+      context: ./
+    depends_on:
+      - db
+      - cache
+    environment:
+      REDIS_HOST: cache
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+      CONNECTION_STRING:  host=localhost port=5432 user=postgres dbname=labraboard password=postgres
+    links:
+      - db
+      - cache
 volumes:
   db:
     driver: local
