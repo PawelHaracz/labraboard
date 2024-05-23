@@ -113,18 +113,12 @@ func (receiver *Iac) GetEnvs(hideSecret bool) map[string]string {
 	return envs
 }
 
-func (receiver *Iac) GetVariables() map[string]string {
-	var variables map[string]string
-	for _, variable := range receiver.variables {
-		variables[variable.Name] = variable.Value
-	}
-	return variables
-}
-
 func (receiver *Iac) GetVariableMap() map[string]string {
 	var variables = map[string]string{}
 	for _, variable := range receiver.variables {
-		variables[variable.Name] = variable.Value
+		if variable != nil {
+			variables[variable.Name] = variable.Value
+		}
 	}
 	return variables
 }

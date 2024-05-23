@@ -95,7 +95,7 @@ func (c *TerraformPlanController) GetTerraformPlan(g *gin.Context) {
 		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
 		return
 	}
-	parsedPlanId, err := uuid.Parse(projectId)
+	parsedPlanId, err := uuid.Parse(planId)
 	if err != nil {
 		l.Warn().Err(err).Msg("cannot parsed uuid")
 		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})

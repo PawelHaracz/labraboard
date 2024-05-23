@@ -152,6 +152,7 @@ func (svc *IacService) GetPlans(projectId uuid.UUID, ctx context.Context) []*vo.
 }
 
 func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID, ctx context.Context) (*dtos.PlanWithOutputDto, error) {
+	log := logger.GetWitContext(ctx).With().Logger()
 	iac, err := svc.unitOfWork.IacRepository.Get(projectId, ctx)
 	if err != nil {
 		return nil, err
@@ -169,20 +170,21 @@ func (svc *IacService) GetPlan(projectId uuid.UUID, planId uuid.UUID, ctx contex
 	}
 	if plan.Status == vo.Succeed {
 		p, err := svc.unitOfWork.IacPlan.Get(plan.Id, ctx)
-		add, update, deleteItem := p.GetChanges()
-		if err == nil {
-			m := map[string]interface{}{
-				"changes": map[string]interface{}{
-					"add":    add,
-					"update": update,
-					"delete": deleteItem,
-				},
-				"json": p.GetPlanJson(),
-			}
-			result.Outputs = m
-
-			p.GetPlanJson()
+		if err != nil {
+			log.Error().Err(err)
 		}
+		add, update, deleteItem := p.GetChanges()
+		m := map[string]interface{}{
+			"changes": map[string]interface{}{
+				"add":    add,
+				"update": update,
+				"delete": deleteItem,
+			},
+			"json": p.GetPlanJson(),
+		}
+		result.Outputs = m
+
+		p.GetPlanJson()
 	}
 	return result, nil
 }

@@ -31,7 +31,7 @@ func NewEventHandlerFactory(eventSubscriber eb.EventSubscriber, eventPublisher e
 
 func (factory *EventHandlerFactory) RegisterHandler(event events.EventName) (EventHandler, error) {
 	if !helpers.Contains(factory.allowedEvents, event) {
-		return nil, HandlerAlreadyRegistered
+		return nil, errors.Wrap(HandlerAlreadyRegistered, string(event))
 	}
 	switch event {
 	case events.LEASE_LOCK:
@@ -49,7 +49,9 @@ func (factory *EventHandlerFactory) RegisterHandler(event events.EventName) (Eve
 
 func (factory *EventHandlerFactory) RegisterAllHandlers() ([]EventHandler, error) {
 	handlers := make([]EventHandler, len(factory.allowedEvents))
-	for i, allowedEvent := range factory.allowedEvents {
+	allowedEvents := make([]events.EventName, len(factory.allowedEvents))
+	copy(allowedEvents, factory.allowedEvents)
+	for i, allowedEvent := range allowedEvents {
 		handler, err := factory.RegisterHandler(allowedEvent)
 		if err != nil {
 			return nil, err

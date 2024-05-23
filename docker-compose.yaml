@@ -15,7 +15,7 @@ services:
     restart: always
     ports:
       - '6379:6379'
-    command: redisEventBus-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
     volumes:
       - cache:/data
   api:
@@ -30,7 +30,7 @@ services:
       REDIS_HOST: cache
       REDIS_PORT: 6379
       REDIS_PASSWORD: eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
-      CONNECTION_STRING:  host=localhost port=5432 user=postgres dbname=labraboard password=postgres
+      CONNECTION_STRING: host=db port=5432 user=postgres dbname=labraboard password=postgres
     links:
       - db
       - cache
@@ -38,6 +38,7 @@ services:
     command: ./handlers
     build:
       context: ./
+      dockerfile:  Dockerfile
     depends_on:
       - db
       - cache
@@ -45,7 +46,7 @@ services:
       REDIS_HOST: cache
       REDIS_PORT: 6379
       REDIS_PASSWORD: eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
-      CONNECTION_STRING:  host=localhost port=5432 user=postgres dbname=labraboard password=postgres
+      CONNECTION_STRING: host=db port=5432 user=postgres dbname=labraboard password=postgres
     links:
       - db
       - cache

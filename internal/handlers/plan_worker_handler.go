@@ -34,17 +34,16 @@ func newTriggeredPlanHandler(eventSubscriber eb.EventSubscriber, unitOfWork *rep
 func (handler *triggeredPlanHandler) Handle(ctx context.Context) {
 	log := logger.GetWitContext(ctx).With().Str("event", string(events.TRIGGERED_PLAN)).Logger()
 	pl := handler.eventSubscriber.Subscribe(events.TRIGGERED_PLAN, log.WithContext(ctx))
-	go func() {
-		for msg := range pl {
-			var event = events.PlanTriggered{}
-			err := json.Unmarshal(msg, &event)
-			if err != nil {
-				log.Error().Err(fmt.Errorf("cannot handle message type %T", event))
-			}
-			log.Info().Msgf("Received message: %s", msg)
-			handler.handlePlanTriggered(event, log.WithContext(ctx))
+	for msg := range pl {
+		var event = events.PlanTriggered{}
+		err := json.Unmarshal(msg, &event)
+		if err != nil {
+			log.Error().Err(fmt.Errorf("cannot handle message type %T", event))
 		}
-	}()
+		log.Info().Msgf("Received message: %s", msg)
+		handler.handlePlanTriggered(event, log.WithContext(ctx))
+	}
+
 }
 
 func createBackendFile(path string, statePath string) error {
@@ -172,7 +171,7 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 	if obj.Variables != nil || len(obj.Variables) != 0 {
 		variableMap = obj.Variables
 	} else {
-		variableMap = iac.GetVariables()
+		variableMap = iac.GetVariableMap()
 	}
 
 	var variables []string
@@ -183,9 +182,9 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 	iacTerraformPlanJson, err := tofu.Plan(envVariables, variables, log.WithContext(ctx))
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
-		log.Error().Err(err)
+		log.Warn().Err(err).Msg(err.Error())
 		if err = handler.unitOfWork.IacRepository.Update(iac, log.WithContext(ctx)); err != nil {
-			log.Error().Err(err)
+			log.Warn().Err(err).Msg(err.Error())
 			return
 		}
 		return
@@ -214,7 +213,7 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 			GitPath:  repoBranch,
 			GitUrl:   repoUrl,
 			Envs:     historyEnvs,
-			Variable: iac.GetVariableMap(),
+			Variable: variableMap,
 		}
 
 		plan, err = aggregates.NewIacPlan(obj.PlanId, aggregates.Tofu, historyConfiguration)
@@ -222,13 +221,19 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 			log.Error().Err(err)
 			return
 		}
+		if err = handler.unitOfWork.IacPlan.Add(plan, log.WithContext(ctx)); err != nil {
+			log.Error().Err(err)
+			return
+		}
 	}
 	plan.AddPlan(iacTerraformPlanJson.GetPlan())
 	plan.AddChanges(iacTerraformPlanJson.GetChanges()...)
-
 	iac.UpdatePlan(obj.PlanId, vo.Succeed) //optimistic change :)
-	if err = handler.unitOfWork.IacPlan.Add(plan, log.WithContext(ctx)); err != nil {
+
+	if err = handler.unitOfWork.IacPlan.Update(plan, log.WithContext(ctx)); err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
+		log.Error().Err(err)
+		return
 	}
 	if err = handler.unitOfWork.IacRepository.Update(iac, log.WithContext(ctx)); err != nil {
 		log.Error().Err(err)

@@ -7,9 +7,11 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog"
 	"labraboard"
 	"labraboard/internal/eventbus/redisEventBus"
 	"labraboard/internal/handlers"
+	"labraboard/internal/logger"
 	"labraboard/internal/managers"
 	"labraboard/internal/repositories"
 	"labraboard/internal/repositories/postgres"
@@ -18,19 +20,16 @@ import (
 	"time"
 )
 
-func main() {
-	// Wait for a signal to quit:
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, os.Kill)
+var cfg labraboard.Config
+var log zerolog.Logger
 
-	ctx, cancel := context.WithCancel(context.Background())
-	var cfg labraboard.Config
+func init() {
 	configFile := flag.String("config", "", "config file, if empty then use env variables")
 	flag.Parse()
 	if *configFile == "" {
 		err := cleanenv.ReadEnv(&cfg)
 		if err != nil {
-			panic(errors.Wrap(err, "cannot read config file"))
+			panic(errors.Wrap(err, "Missing env variables"))
 		}
 	} else {
 		err := cleanenv.ReadConfig(*configFile, &cfg)
@@ -38,13 +37,24 @@ func main() {
 			panic(errors.Wrap(err, "cannot read config file"))
 		}
 	}
+	logger.Init(cfg.LogLevel, cfg.UsePrettyLogs)
+	log = logger.Get()
+}
+
+func main() {
+	log.Info().Msg("Starting handlers")
+	// Wait for a signal to quit:
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, os.Kill)
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	db := postgres.NewDatabase(cfg.ConnectionString)
 	defer func(db *postgres.Database) {
 		err := db.Close()
 		if err != nil {
 			cancel()
-			panic(err)
+			log.Panic().Err(err)
 		}
 	}(db)
 	db.Migrate()
@@ -55,7 +65,7 @@ func main() {
 	)
 	if err != nil {
 		cancel()
-		panic(err)
+		log.Panic().Err(err)
 	}
 
 	redisClient := redis.NewClient(&redis.Options{
@@ -67,7 +77,7 @@ func main() {
 	eventBus, err := redisEventBus.NewRedisEventBus(ctx, redisEventBus.WithRedis(redisClient))
 	if err != nil {
 		cancel()
-		panic(err)
+		log.Panic().Err(err)
 	}
 
 	handlerFactory := handlers.NewEventHandlerFactory(eventBus, eventBus, uow)
@@ -75,7 +85,7 @@ func main() {
 	allHandlers, err := handlerFactory.RegisterAllHandlers()
 	if err != nil {
 		cancel()
-		panic(err)
+		log.Panic().Err(err)
 	}
 	for _, handler := range append(allHandlers) {
 		go handler.Handle(ctx)
@@ -87,7 +97,7 @@ func main() {
 
 	if err != nil {
 		cancel()
-		panic(err)
+		log.Panic().Err(err)
 	}
 
 	go func(ctx context.Context) {
