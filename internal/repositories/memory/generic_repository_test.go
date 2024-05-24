@@ -3,6 +3,7 @@ package memory
 import (
 	"errors"
 	"github.com/google/uuid"
+	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	vo "labraboard/internal/valueobjects"
 	"testing"
@@ -31,11 +32,11 @@ func TestGenericMemory_GetIac(t *testing.T) {
 			expectedErr: nil,
 		},
 	}
-	repo.Add(iac)
+	repo.Add(iac, context.TODO())
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			_, err := repo.Get(tc.id)
+			_, err := repo.Get(tc.id, context.TODO())
 			if !errors.Is(err, tc.expectedErr) {
 				t.Errorf("Expected error %v, got %v", tc.expectedErr, err)
 			}

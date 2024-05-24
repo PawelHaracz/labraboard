@@ -8,7 +8,8 @@ import (
 
 // TestNewTofuIacService tests the NewTofuIacService function you have to have permissions for perform terraform on cloud
 func TestNewTofuIacService(t *testing.T) {
-	ctx := context.Background()
+	t.SkipNow()
+	ctx := context.TODO()
 	iac, err := NewTofuIacService("/Users/pawelharacz/src/PoC/tf-example")
 	if err != nil {
 		t.Fatalf("error: %v", err)

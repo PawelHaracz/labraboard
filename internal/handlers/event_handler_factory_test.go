@@ -9,7 +9,6 @@ import (
 func TestEventHandlerFactory(t *testing.T) {
 	var factory = NewEventHandlerFactory(nil, nil, nil)
 	t.Run("Register Event that doesn't exist, should return null", func(t *testing.T) {
-		t.Parallel()
 		var Z events.EventName = "Z"
 		act, err := factory.RegisterHandler(Z)
 
@@ -17,14 +16,13 @@ func TestEventHandlerFactory(t *testing.T) {
 		assert.Error(t, MissingHandlerImplementedFactory, err.Error())
 	})
 	t.Run("Register Event that exist, should return handler", func(t *testing.T) {
-		act, err := factory.RegisterHandler(events.LEASE_LOCK)
+		act, err := factory.RegisterHandler(events.SCHEDULED_PLAN)
 
 		assert.Equal(t, nil, err)
 		assert.NotEqual(t, act, nil)
 	})
 
 	t.Run("Register Twice the same event, should raise the error", func(t *testing.T) {
-		t.Parallel()
 		act, err := factory.RegisterHandler(events.LEASE_LOCK)
 
 		assert.Equal(t, nil, err)
@@ -36,7 +34,6 @@ func TestEventHandlerFactory(t *testing.T) {
 	})
 
 	t.Run("Register all handlers, should be ok", func(t *testing.T) {
-		t.Parallel()
 		var expected = len(factory.allowedEvents)
 		act, err := factory.RegisterAllHandlers()
 		assert.Nil(t, err)

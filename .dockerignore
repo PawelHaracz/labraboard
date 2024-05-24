@@ -13,3 +13,4 @@ vendor/
 # Exclude git history and configuration.
 .gitignore
 testingArtifacts/
+bin/

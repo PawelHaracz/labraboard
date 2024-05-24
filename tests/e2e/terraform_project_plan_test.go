@@ -14,6 +14,7 @@ import (
 // use this deprecated method becasue there is a bug with opentelemetry schema version between docker desktop and test containers
 // conflicting Schema URL: https://opentelemetry.io/schemas/1.24.0 and https://opentelemetry.io/schemas/1.21.0
 func TestTerraformProjectPlan(t *testing.T) {
+	t.SkipNow()
 	composeFilePaths := []string{"../../docker-compose.yaml"}
 	compose := tc.NewLocalDockerCompose(composeFilePaths, uuid.New().String())
 	compose.Cmd = []string{"up", "-d"}

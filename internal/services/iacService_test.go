@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	m "labraboard/internal/eventbus/memory"
+	"labraboard/internal/logger"
 	"labraboard/internal/managers"
 	"labraboard/internal/models"
 	"labraboard/internal/repositories"
@@ -55,6 +56,7 @@ func TestNewIacService(t *testing.T) {
 
 func TestIacService_RunTerraformPlan(t *testing.T) {
 	ctx := context.Background()
+	logger.Init(1, true)
 	uow, err := repositories.NewUnitOfWork(
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.Iac]()),
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.IacPlan]()),
