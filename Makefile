@@ -2,7 +2,7 @@ VERSION ?= v0.0.1
 REGISTRY ?= ghcr.io
 IMAGE_BUILDER ?= docker
 IMAGE_BUILD_CMD ?= build
-IMAGE_NAME ?= labraboard/labraboard
+IMAGE_NAME ?= pawelharacz/labraboard
 
 export IMG = $(REGISTRY)/$(IMAGE_NAME):$(VERSION)
 export CGO_ENABLED=0
@@ -14,7 +14,7 @@ mod:
 	go mod download && go mod verify
 
 test:
-	  for PACKAGE in $(go list ./...); do go test ${PACKAGE}; done;
+	for PACKAGE in $(go list ./...); do go test -v -short ${PACKAGE}; done;
 
 build-api:
 	cd cmd/api && go build -o ../../bin/api
@@ -41,3 +41,6 @@ docker-compose-up:
 
 docker-compose-stop:
 	docker compose stop
+
+build-swagger:
+	swag init -g ./cmd/api/main.go -o ./docs
