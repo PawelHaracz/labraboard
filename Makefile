@@ -44,3 +44,10 @@ docker-compose-stop:
 
 build-swagger:
 	swag init -g ./cmd/api/main.go -o ./docs
+
+helm-render:
+	helm template charts/labraboard --set image.repository=$(REGISTRY)/$(IMAGE_NAME) --set image.tag=$(VERSION)
+
+helm-push:
+	helm package charts/labraboard --app-version $(VERSION) --version $(VERSION)
+	helm push labraboard-*.tgz oci://ghcr.io/$(IMAGE_NAME)

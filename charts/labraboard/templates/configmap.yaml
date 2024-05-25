@@ -1,0 +1,10 @@
+{{- if not (empty (.Values.configMapData)) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "labraboard.fullname" . }}
+  labels:
+    {{- include "labraboard.labels" . | nindent 4 }}
+data:
+  {{- .Values.configMapData | toYaml | nindent 2 }}
+{{- end -}}
