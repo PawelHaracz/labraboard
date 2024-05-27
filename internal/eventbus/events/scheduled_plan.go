@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const SCHEDULED_PLAN = "scheduled_plan"
+const SCHEDULED_PLAN EventName = "scheduled_plan"
 
 type ScheduledPlan struct {
 	ProjectId uuid.UUID

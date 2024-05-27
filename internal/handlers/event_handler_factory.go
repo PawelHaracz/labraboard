@@ -25,7 +25,7 @@ func NewEventHandlerFactory(eventSubscriber eb.EventSubscriber, eventPublisher e
 		eventSubscriber: eventSubscriber,
 		unitOfWork:      unitOfWork,
 		eventPublisher:  eventPublisher,
-		allowedEvents:   []events.EventName{events.LEASE_LOCK, events.TRIGGERED_PLAN, events.SCHEDULED_PLAN},
+		allowedEvents:   []events.EventName{events.LEASE_LOCK, events.TRIGGERED_PLAN, events.SCHEDULED_PLAN, events.IAC_APPLY_SCHEDULED},
 	}
 }
 
@@ -43,6 +43,9 @@ func (factory *EventHandlerFactory) RegisterHandler(event events.EventName) (Eve
 	case events.SCHEDULED_PLAN:
 		factory.allowedEvents = helpers.Remove(factory.allowedEvents, event)
 		return newScheduledPlanHandler(factory.eventSubscriber, factory.unitOfWork, factory.eventPublisher)
+	case events.IAC_APPLY_SCHEDULED:
+		factory.allowedEvents = helpers.Remove(factory.allowedEvents, event)
+		return newScheduledIaCApplyHandler(factory.eventSubscriber, factory.unitOfWork)
 	}
 	return nil, MissingHandlerImplementedFactory
 }

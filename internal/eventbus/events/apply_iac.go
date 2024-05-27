@@ -8,7 +8,7 @@ import (
 
 const IAC_APPLY_SCHEDULED EventName = "iac_apply_scheduled"
 
-type IacApplied struct {
+type IacApplyScheduled struct {
 	ChangeId  uuid.UUID
 	ProjectId uuid.UUID
 	PlanId    uuid.UUID
@@ -16,6 +16,6 @@ type IacApplied struct {
 	Owner     string
 }
 
-func (i IacApplied) MarshalBinary() ([]byte, error) {
+func (i IacApplyScheduled) MarshalBinary() ([]byte, error) {
 	return json.Marshal(i)
 }

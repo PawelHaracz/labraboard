@@ -283,7 +283,7 @@ func (svc *IacService) ScheduleApply(projectId uuid.UUID, planId uuid.UUID, ctx 
 	}
 
 	var changeId = uuid.New()
-	var event = &events.IacApplied{
+	var event = &events.IacApplyScheduled{
 		ChangeId:  changeId,
 		ProjectId: projectId,
 		PlanId:    planId,

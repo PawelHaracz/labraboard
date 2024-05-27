@@ -24,9 +24,10 @@ func newScheduledPlanHandler(eventSubscriber eb.EventSubscriber, unitOfWork *rep
 		publisher,
 	}, nil
 }
+
 func (handler *scheduledPlanHandler) Handle(ctx context.Context) {
-	log := logger.GetWitContext(ctx).With().Str("event", events.SCHEDULED_PLAN).Logger()
-	locks := handler.eventSubscriber.Subscribe(events.SCHEDULED_PLAN, ctx)
+	log := logger.GetWitContext(ctx).With().Str("event", string(events.SCHEDULED_PLAN)).Logger()
+	locks := handler.eventSubscriber.Subscribe(events.SCHEDULED_PLAN, log.WithContext(ctx))
 	for msg := range locks {
 		var event = events.ScheduledPlan{}
 		err := json.Unmarshal(msg, &event)
