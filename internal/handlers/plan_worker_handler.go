@@ -22,12 +22,14 @@ import (
 type triggeredPlanHandler struct {
 	eventSubscriber eb.EventSubscriber
 	unitOfWork      *repositories.UnitOfWork
+	assembler       *iacSvc.Assembler
 }
 
 func newTriggeredPlanHandler(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) (*triggeredPlanHandler, error) {
 	return &triggeredPlanHandler{
 		eventSubscriber,
 		unitOfWork,
+		iacSvc.NewAssembler(unitOfWork),
 	}, nil
 }
 
@@ -69,33 +71,26 @@ func createBackendFile(path string, statePath string) error {
 
 func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggered, ctx context.Context) {
 	log := logger.GetWitContext(ctx).With().Str("planId", obj.PlanId.String()).Str("projectId", obj.ProjectId.String()).Logger()
-	iac, err := handler.unitOfWork.IacRepository.Get(obj.ProjectId, log.WithContext(ctx))
+	var input = iacSvc.Input{
+		ProjectId:    obj.ProjectId,
+		PlanId:       obj.PlanId,
+		Variables:    obj.Variables,
+		EnvVariables: obj.EnvVariables,
+		CommitName:   obj.Commit.Name,
+		CommitType:   obj.Commit.Type,
+		RepoPath:     obj.RepoPath,
+	}
+	var assembly, err = handler.assembler.Assemble(input, ctx)
 
 	if err != nil {
 		log.Error().Err(err)
 		return
 	}
-
-	repoUrl, repoBranch, repoPath := iac.GetRepo()
-	eventSha, eventCommitType, eventRepoPath := obj.Commit.Name, obj.Commit.Type, obj.RepoPath
-	if repoUrl == "" {
-		log.Error().Msg("Missing repo url")
-		return
-	}
-
-	if eventRepoPath == "" {
-		eventRepoPath = repoPath
-	}
-	if eventSha == "" {
-		eventSha = repoBranch
-
-	}
-
-	folderPath := fmt.Sprintf("/tmp/%s", obj.PlanId)
-	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, eventRepoPath)
+	folderPath := fmt.Sprintf("/tmp/%s", assembly.PlanId)
+	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, assembly.RepoPath)
 
 	gitRepo, err := git.PlainClone(folderPath, false, &git.CloneOptions{
-		URL:      repoUrl,
+		URL:      assembly.RepoUrl,
 		Progress: os.Stdout,
 	})
 
@@ -106,40 +101,29 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 			return
 		}
 	}(folderPath)
-
-	commitSha := ""
-
-	if eventSha == "" {
-		branchConfig, err := gitRepo.CommitObject(plumbing.NewHash(eventSha))
+	var commitSha = ""
+	switch assembly.CommitType {
+	case models.TAG:
+		tag, err := gitRepo.Tag(assembly.CommitName)
+		if err != nil {
+			log.Error().Err(err)
+			return
+		}
+		commitSha = tag.Hash().String()
+	case models.SHA:
+		object, err := gitRepo.CommitObject(plumbing.NewHash(assembly.CommitName))
+		if err != nil {
+			log.Error().Err(err)
+			return
+		}
+		commitSha = object.Hash.String()
+	case models.BRANCH:
+		branchConfig, err := gitRepo.CommitObject(plumbing.NewHash(assembly.CommitName))
 		if err != nil {
 			log.Error().Err(err)
 			return
 		}
 		commitSha = branchConfig.Hash.String()
-	} else {
-		switch eventCommitType {
-		case models.TAG:
-			tag, err := gitRepo.Tag(eventSha)
-			if err != nil {
-				log.Error().Err(err)
-				return
-			}
-			commitSha = tag.Hash().String()
-		case models.SHA:
-			object, err := gitRepo.CommitObject(plumbing.NewHash(eventSha))
-			if err != nil {
-				log.Error().Err(err)
-				return
-			}
-			commitSha = object.Hash.String()
-		case models.BRANCH:
-			branchConfig, err := gitRepo.CommitObject(plumbing.NewHash(eventSha))
-			if err != nil {
-				log.Error().Err(err)
-				return
-			}
-			commitSha = branchConfig.Hash.String()
-		}
 	}
 
 	if err = createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
@@ -152,34 +136,9 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		log.Error().Err(err)
 		return
 	}
-	envVariables := obj.EnvVariables
-	allCurrentEnvs := iac.GetEnvs(false)
 
-	if envVariables == nil || len(envVariables) == 0 {
-		envVariables = allCurrentEnvs
-	}
-
-	for key, val := range envVariables {
-		if val == vo.SECRET_VALUE_HASH {
-			secret, ok := allCurrentEnvs[key]
-			if ok {
-				envVariables[key] = secret
-			}
-		}
-	}
-	var variableMap map[string]string
-	if obj.Variables != nil || len(obj.Variables) != 0 {
-		variableMap = obj.Variables
-	} else {
-		variableMap = iac.GetVariableMap()
-	}
-
-	var variables []string
-	for key, value := range variableMap {
-		variables = append(variables, fmt.Sprintf("%s=%s", key, value))
-	}
-
-	iacTerraformPlanJson, err := tofu.Plan(envVariables, variables, log.WithContext(ctx))
+	iacTerraformPlanJson, err := tofu.Plan(assembly.InlineEnvVariable(), assembly.InlineVariable(), log.WithContext(ctx))
+	iac, err := handler.unitOfWork.IacRepository.Get(input.ProjectId, log.WithContext(ctx))
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		log.Warn().Err(err).Msg(err.Error())
@@ -190,19 +149,18 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		return
 	}
 
-	var envs map[string]string
-	if obj.Variables != nil || len(obj.Variables) != 0 {
-		envs = obj.EnvVariables
-	} else {
-		envs = iac.GetEnvs(true)
-	}
-	historyEnvs := make([]vo.IaCEnv, len(envs))
-	i := 0
-	for key, value := range envs {
-		historyEnvs[i] = vo.IaCEnv{
-			Name:      key,
-			Value:     value,
-			HasSecret: value == vo.SECRET_VALUE_HASH,
+	historyEnvs := make([]vo.IaCEnv, len(assembly.EnvVariables))
+	if assembly.EnvVariables != nil || len(obj.EnvVariables) != 0 {
+		i := 0
+		for _, env := range assembly.EnvVariables {
+			historyEnvs[i] = vo.IaCEnv{
+				Name:      env.Name,
+				Value:     env.Value,
+				HasSecret: env.HasSecret,
+			}
+			if historyEnvs[i].HasSecret {
+				historyEnvs[i].Value = vo.SECRET_VALUE_HASH
+			}
 		}
 	}
 
@@ -210,10 +168,10 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 	if err != nil {
 		historyConfiguration := &iacPlans.HistoryProjectConfig{
 			GitSha:   commitSha,
-			GitPath:  repoBranch,
-			GitUrl:   repoUrl,
+			GitPath:  assembly.RepoPath,
+			GitUrl:   assembly.RepoUrl,
 			Envs:     historyEnvs,
-			Variable: variableMap,
+			Variable: assembly.Variables,
 		}
 
 		plan, err = aggregates.NewIacPlan(obj.PlanId, aggregates.Tofu, historyConfiguration)

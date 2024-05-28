@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	EMPTY_IAC_ASSEMBLY = Output{}
+	EmptyIacAssembly = Output{}
 )
 
 type Output struct {
@@ -52,19 +52,21 @@ func (assembler *Assembler) Assemble(input Input, ctx context.Context) (Output, 
 
 	if err != nil {
 		log.Error().Err(err)
-		return EMPTY_IAC_ASSEMBLY, err
-	}
-
-	plan, err := assembler.unitOfWork.IacPlan.Get(input.PlanId, log.WithContext(ctx))
-	if err == nil {
-		log.Info().Msg(plan.GetPlanJson()) //todo handle plan changes, commits etc.
+		return EmptyIacAssembly, err
 	}
 	repoUrl, repoBranch, repoPath := iac.GetRepo()
 	eventSha, commitType, eventRepoPath := input.CommitName, input.CommitType, input.RepoPath
+
+	plan, err := assembler.unitOfWork.IacPlan.Get(input.PlanId, log.WithContext(ctx))
+	if err == nil && plan.HistoryConfig != nil {
+		eventSha = plan.HistoryConfig.GitSha
+		commitType = models.SHA
+		eventRepoPath = plan.HistoryConfig.GitPath
+	}
 	if repoUrl == "" {
 		err = errors.New("Missing repo url")
 		log.Error().Err(err)
-		return EMPTY_IAC_ASSEMBLY, err
+		return EmptyIacAssembly, err
 	}
 	if eventRepoPath == "" {
 		eventRepoPath = repoPath
@@ -84,39 +86,52 @@ func (assembler *Assembler) Assemble(input Input, ctx context.Context) (Output, 
 		output.CommitType = commitType
 		output.CommitName = eventSha
 	}
-
-	envVariables := input.EnvVariables
 	allCurrentEnvs := iac.GetEnvs(false)
 	var voEnvVariables = make([]vo.IaCEnv, len(allCurrentEnvs))
-	if envVariables == nil || len(envVariables) == 0 {
-		envVariables = allCurrentEnvs
-	}
-	var i = 0
-	for key, val := range envVariables {
-		if val == vo.SECRET_VALUE_HASH {
-			secret, ok := allCurrentEnvs[key]
-			if ok {
+	if plan == nil || plan.HistoryConfig == nil || len(plan.HistoryConfig.Envs) == 0 {
+		envVariables := input.EnvVariables
+
+		if envVariables == nil || len(envVariables) == 0 {
+			envVariables = allCurrentEnvs
+		}
+		var i = 0
+		for key, val := range envVariables {
+			if val == vo.SECRET_VALUE_HASH {
+				secret, ok := allCurrentEnvs[key]
+				if ok {
+					voEnvVariables[i] = vo.IaCEnv{
+						Name:      key,
+						Value:     secret,
+						HasSecret: true,
+					}
+				}
+			} else {
 				voEnvVariables[i] = vo.IaCEnv{
 					Name:      key,
-					Value:     secret,
-					HasSecret: true,
+					Value:     val,
+					HasSecret: false,
 				}
 			}
-		} else {
-			voEnvVariables[i] = vo.IaCEnv{
-				Name:      key,
-				Value:     val,
-				HasSecret: false,
+			i = i + 1
+		}
+	} else {
+		voEnvVariables = plan.HistoryConfig.Envs
+		for index, env := range voEnvVariables {
+			if voEnvVariables[index].HasSecret {
+				voEnvVariables[index].Value = allCurrentEnvs[env.Name]
 			}
 		}
-		i = i + 1
 	}
 
 	var variableMap map[string]string
-	if input.Variables != nil || len(input.Variables) != 0 {
-		variableMap = input.Variables
+	if plan == nil || plan.HistoryConfig == nil || len(plan.HistoryConfig.Variable) == 0 {
+		if input.Variables != nil || len(input.Variables) != 0 {
+			variableMap = input.Variables
+		} else {
+			variableMap = iac.GetVariableMap()
+		}
 	} else {
-		variableMap = iac.GetVariableMap()
+		variableMap = plan.HistoryConfig.Variable
 	}
 
 	output.EnvVariables = voEnvVariables
