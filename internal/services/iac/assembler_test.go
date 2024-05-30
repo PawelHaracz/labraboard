@@ -2,9 +2,11 @@ package iac
 
 import (
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/logger"
+	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	dbmemory "labraboard/internal/repositories/memory"
 	"labraboard/internal/valueobjects"
@@ -14,7 +16,6 @@ import (
 )
 
 func TestAssembler_Assemble(t *testing.T) {
-	t.SkipNow()           //todo
 	logger.Init(7, false) //disabled
 	uow, _ := repositories.NewUnitOfWork(
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(
@@ -27,9 +28,197 @@ func TestAssembler_Assemble(t *testing.T) {
 			dbmemory.NewGenericRepository[*aggregates.TerraformState](),
 		),
 	)
-	//projectId, planIds := Arrange(uow)
-	_ = NewAssembler(uow)
+	projectId, planIds := Arrange(uow)
+	var assembler = NewAssembler(uow)
+	var ctx = context.TODO()
+	t.Run("Plan doesn't exist, should take from project values", func(t *testing.T) {
+		var input = Input{
+			ProjectId:    projectId,
+			PlanId:       planIds[0],
+			Variables:    nil,
+			EnvVariables: nil,
+			CommitName:   "",
+			CommitType:   "",
+			RepoPath:     "",
+		}
 
+		var expectedEnvVariables = []valueobjects.IaCEnv{
+			{
+				Name:      "TEST",
+				Value:     "test1",
+				HasSecret: false,
+			},
+			{
+				Name:      "TEST1",
+				Value:     "t",
+				HasSecret: true,
+			},
+		}
+		var expectedVariables = map[string]string{
+			"VARTEST": "BLABLE",
+		}
+
+		if output, err := assembler.Assemble(input, ctx); err != nil {
+			t.Fatal(err)
+		} else {
+
+			assert.Equal(t, planIds[0], output.PlanId)
+			assert.Equal(t, projectId, output.ProjectId)
+			assert.Equal(t, "main", output.CommitName)
+			assert.Equal(t, models.BRANCH, output.CommitType)
+			assert.Equal(t, "https://github.com/pawelharacz/labraboard", output.RepoUrl)
+			assert.Equal(t, "", output.RepoPath)
+			assert.ElementsMatch(t, expectedEnvVariables, output.EnvVariables)
+			assert.EqualValues(t, expectedVariables, output.Variables)
+		}
+	})
+
+	t.Run("Plan exists, but it doesn't have envs and variables should combine values from project and plan", func(t *testing.T) {
+		var input = Input{
+			ProjectId:    projectId,
+			PlanId:       planIds[1],
+			Variables:    nil,
+			EnvVariables: nil,
+			CommitName:   "88864e896674402e4b54e0b8aa53b77aa18fb8dd",
+			CommitType:   models.SHA,
+			RepoPath:     "",
+		}
+
+		var expectedEnvVariables = []valueobjects.IaCEnv{
+			{
+				Name:      "TEST",
+				Value:     "test1",
+				HasSecret: false,
+			},
+			{
+				Name:      "TEST1",
+				Value:     "t",
+				HasSecret: true,
+			},
+		}
+		var expectedVariables = map[string]string{
+			"VARTEST": "BLABLE",
+		}
+
+		if output, err := assembler.Assemble(input, ctx); err != nil {
+			t.Fatal(err)
+		} else {
+
+			assert.Equal(t, planIds[1], output.PlanId)
+			assert.Equal(t, projectId, output.ProjectId)
+			assert.Equal(t, "88864e896674402e4b54e0b8aa53b77aa18fb8dd", output.CommitName)
+			assert.Equal(t, models.SHA, output.CommitType)
+			assert.Equal(t, "https://github.com/pawelharacz/labraboard", output.RepoUrl)
+			assert.Equal(t, "", output.RepoPath)
+			assert.ElementsMatch(t, expectedEnvVariables, output.EnvVariables)
+			assert.EqualValues(t, expectedVariables, output.Variables)
+		}
+	})
+
+	t.Run("Plan exists, input contains provided env and variables but plan doesn't have envs and variables should combine values from input, project and plan", func(t *testing.T) {
+		var input = Input{
+			ProjectId: projectId,
+			PlanId:    planIds[1],
+			Variables: map[string]string{
+				"RETEST": "LOL",
+			},
+			EnvVariables: map[string]string{
+				"TEST":  "test2",
+				"4TEST": "test4",
+			},
+			CommitName: "88864e896674402e4b54e0b8aa53b77aa18fb8dd",
+			CommitType: models.SHA,
+			RepoPath:   "",
+		}
+
+		var expectedEnvVariables = []valueobjects.IaCEnv{
+			{
+				Name:      "TEST",
+				Value:     "test2",
+				HasSecret: false,
+			},
+			{
+				Name:      "TEST1",
+				Value:     "t",
+				HasSecret: true,
+			},
+			{
+				Name:      "4TEST",
+				Value:     "test4",
+				HasSecret: false,
+			},
+		}
+		var expectedVariables = map[string]string{
+			"VARTEST": "BLABLE",
+			"RETEST":  "LOL",
+		}
+
+		if output, err := assembler.Assemble(input, ctx); err != nil {
+			t.Fatal(err)
+		} else {
+
+			assert.Equal(t, planIds[1], output.PlanId)
+			assert.Equal(t, projectId, output.ProjectId)
+			assert.Equal(t, "88864e896674402e4b54e0b8aa53b77aa18fb8dd", output.CommitName)
+			assert.Equal(t, models.SHA, output.CommitType)
+			assert.Equal(t, "https://github.com/pawelharacz/labraboard", output.RepoUrl)
+			assert.Equal(t, "", output.RepoPath)
+			assert.ElementsMatch(t, expectedEnvVariables, output.EnvVariables)
+			assert.EqualValues(t, expectedVariables, output.Variables)
+		}
+	})
+
+	t.Run("Plan exists, input contains provided env and variables, plan has envs and variables should combine values from input, project and plan", func(t *testing.T) {
+		var input = Input{
+			ProjectId: projectId,
+			PlanId:    planIds[2],
+			Variables: map[string]string{
+				"RETEST": "LOL",
+			},
+			EnvVariables: map[string]string{
+				"4TEST": "test4",
+			},
+			CommitName: "88864e896674402e4b54e0b8aa53b77aa18fb8dd",
+			CommitType: models.SHA,
+			RepoPath:   "",
+		}
+
+		var expectedEnvVariables = []valueobjects.IaCEnv{
+			{
+				Name:      "TEST",
+				Value:     "test2",
+				HasSecret: false,
+			},
+			{
+				Name:      "TEST1",
+				Value:     "t",
+				HasSecret: true,
+			},
+			{
+				Name:      "4TEST",
+				Value:     "test4",
+				HasSecret: false,
+			},
+		}
+		var expectedVariables = map[string]string{
+			"VARTEST": "FOOBAR",
+			"RETEST":  "LOL",
+		}
+
+		if output, err := assembler.Assemble(input, ctx); err != nil {
+			t.Fatal(err)
+		} else {
+
+			assert.Equal(t, planIds[2], output.PlanId)
+			assert.Equal(t, projectId, output.ProjectId)
+			assert.Equal(t, "88864e896674402e4b54e0b8aa53b77aa18fb8dd", output.CommitName)
+			assert.Equal(t, models.SHA, output.CommitType)
+			assert.Equal(t, "https://github.com/pawelharacz/labraboard", output.RepoUrl)
+			assert.Equal(t, "", output.RepoPath)
+			assert.ElementsMatch(t, expectedEnvVariables, output.EnvVariables)
+			assert.EqualValues(t, expectedVariables, output.Variables)
+		}
+	})
 }
 
 func Arrange(uow *repositories.UnitOfWork) (uuid.UUID, []uuid.UUID) {
@@ -41,7 +230,7 @@ func Arrange(uow *repositories.UnitOfWork) (uuid.UUID, []uuid.UUID) {
 		},
 		{
 			Name:      "TEST1",
-			Value:     "test1",
+			Value:     "t",
 			HasSecret: true,
 		},
 	}
@@ -62,6 +251,7 @@ func Arrange(uow *repositories.UnitOfWork) (uuid.UUID, []uuid.UUID) {
 	var planIds = []uuid.UUID{
 		uuid.New(),
 		uuid.New(),
+		uuid.New(),
 	}
 
 	var plans = []*valueobjects.Plans{
@@ -77,10 +267,16 @@ func Arrange(uow *repositories.UnitOfWork) (uuid.UUID, []uuid.UUID) {
 			CreatedOn: time.Now(),
 			ModifyOn:  time.Now(),
 		},
+		{
+			Id:        planIds[2],
+			Status:    valueobjects.Pending,
+			CreatedOn: time.Now(),
+			ModifyOn:  time.Now(),
+		},
 	}
 	iac, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform, plans, envs, repo, variables)
 	uow.IacRepository.Add(iac, context.TODO())
-	//todo add envs and variables
+
 	var historyConfig = &iacPlans.HistoryProjectConfig{
 		GitSha:   "88864e896674402e4b54e0b8aa53b77aa18fb8dd",
 		GitUrl:   "https://github.com/PawelHaracz/labraboard/",
@@ -91,5 +287,28 @@ func Arrange(uow *repositories.UnitOfWork) (uuid.UUID, []uuid.UUID) {
 
 	plan, _ := aggregates.NewIacPlan(planIds[1], aggregates.Terraform, historyConfig)
 	uow.IacPlan.Add(plan, context.TODO())
+
+	var historyConfig1 = &iacPlans.HistoryProjectConfig{
+		GitSha:  "88864e896674402e4b54e0b8aa53b77aa18fb8dd",
+		GitUrl:  "https://github.com/PawelHaracz/labraboard/",
+		GitPath: "",
+		Envs: []valueobjects.IaCEnv{
+			{
+				Name:      "TEST",
+				Value:     "test2",
+				HasSecret: false,
+			},
+			{
+				Name:      "TEST1",
+				Value:     valueobjects.SECRET_VALUE_HASH,
+				HasSecret: true,
+			},
+		},
+		Variable: map[string]string{
+			"VARTEST": "FOOBAR",
+		},
+	}
+	plan1, _ := aggregates.NewIacPlan(planIds[2], aggregates.Terraform, historyConfig1)
+	uow.IacPlan.Add(plan1, context.TODO())
 	return iac.GetID(), planIds
 }

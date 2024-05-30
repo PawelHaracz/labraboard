@@ -86,54 +86,64 @@ func (assembler *Assembler) Assemble(input Input, ctx context.Context) (Output, 
 		output.CommitType = commitType
 		output.CommitName = eventSha
 	}
-	allCurrentEnvs := iac.GetEnvs(false)
-	var voEnvVariables = make([]vo.IaCEnv, len(allCurrentEnvs))
-	if plan == nil || plan.HistoryConfig == nil || len(plan.HistoryConfig.Envs) == 0 {
-		envVariables := input.EnvVariables
+	allCurrentEnvs := iac.GetValueEnvs(false)
+	var voEnvVariables []vo.IaCEnv
 
-		if envVariables == nil || len(envVariables) == 0 {
-			envVariables = allCurrentEnvs
-		}
-		var i = 0
-		for key, val := range envVariables {
-			if val == vo.SECRET_VALUE_HASH {
-				secret, ok := allCurrentEnvs[key]
-				if ok {
-					voEnvVariables[i] = vo.IaCEnv{
-						Name:      key,
-						Value:     secret,
-						HasSecret: true,
-					}
+	for _, env := range allCurrentEnvs {
+		voEnvVariables = append(voEnvVariables, env)
+	}
+
+	if plan != nil && plan.HistoryConfig != nil && len(plan.HistoryConfig.Envs) != 0 {
+		for _, env := range plan.HistoryConfig.Envs {
+			if env.HasSecret {
+				//not reachable value so skip
+				continue
+			}
+			var updated = false
+			for i2, _ := range voEnvVariables {
+				if voEnvVariables[i2].Name == env.Name {
+					voEnvVariables[i2].Value = env.Value
+					updated = true
 				}
-			} else {
-				voEnvVariables[i] = vo.IaCEnv{
+			}
+			if !updated {
+				voEnvVariables = append(voEnvVariables, env)
+			}
+		}
+	}
+
+	if input.EnvVariables != nil && len(input.EnvVariables) > 0 {
+		for key, env := range input.EnvVariables {
+			var updated = false
+			for i2, env2 := range voEnvVariables {
+				if env2.Name == key {
+					voEnvVariables[i2].Value = env
+					updated = true
+					break
+				}
+			}
+			if !updated {
+				voEnvVariables = append(voEnvVariables, vo.IaCEnv{
 					Name:      key,
-					Value:     val,
+					Value:     env,
 					HasSecret: false,
-				}
-			}
-			i = i + 1
-		}
-	} else {
-		voEnvVariables = plan.HistoryConfig.Envs
-		for index, env := range voEnvVariables {
-			if voEnvVariables[index].HasSecret {
-				voEnvVariables[index].Value = allCurrentEnvs[env.Name]
+				})
 			}
 		}
 	}
 
-	var variableMap map[string]string
-	if plan == nil || plan.HistoryConfig == nil || len(plan.HistoryConfig.Variable) == 0 {
-		if input.Variables != nil || len(input.Variables) != 0 {
-			variableMap = input.Variables
-		} else {
-			variableMap = iac.GetVariableMap()
-		}
-	} else {
-		variableMap = plan.HistoryConfig.Variable
-	}
+	variableMap := iac.GetVariableMap()
 
+	if plan != nil && plan.HistoryConfig != nil && len(plan.HistoryConfig.Variable) != 0 {
+		for key, val := range plan.HistoryConfig.Variable {
+			variableMap[key] = val
+		}
+	}
+	if input.Variables != nil || len(input.Variables) != 0 {
+		for key, val := range input.Variables {
+			variableMap[key] = val
+		}
+	}
 	output.EnvVariables = voEnvVariables
 	output.Variables = variableMap
 

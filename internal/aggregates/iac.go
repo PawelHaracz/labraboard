@@ -113,6 +113,21 @@ func (receiver *Iac) GetEnvs(hideSecret bool) map[string]string {
 	return envs
 }
 
+func (receiver *Iac) GetValueEnvs(hideSecret bool) []vo.IaCEnv {
+	var envs []vo.IaCEnv
+	for i, env := range receiver.envs {
+		envs = append(envs, vo.IaCEnv{
+			Name:      env.Name,
+			Value:     env.Value,
+			HasSecret: env.HasSecret,
+		})
+		if hideSecret && env.HasSecret {
+			envs[i].Value = vo.SECRET_VALUE_HASH
+		}
+	}
+	return envs
+}
+
 func (receiver *Iac) GetVariableMap() map[string]string {
 	var variables = map[string]string{}
 	for _, variable := range receiver.variables {
