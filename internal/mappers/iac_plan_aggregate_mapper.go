@@ -31,7 +31,7 @@ func (i IacPlanMapper[TDao, T]) Map(dao *models.IaCPlanDb) (*aggregates.IacPlan,
 			return nil, errors.Wrap(err, "can't unmarshal history config")
 		}
 	}
-	return aggregates.NewIacPlanExplicit(dao.ID, aggregates.IaCPlanType(dao.PlanType), historyConfig, summary, changes, dao.PlanJson)
+	return aggregates.NewIacPlanExplicit(dao.ID, aggregates.IaCPlanType(dao.PlanType), historyConfig, summary, changes, dao.PlanJson, dao.PlanRaw)
 }
 
 func (i IacPlanMapper[TDao, T]) RevertMap(aggregate *aggregates.IacPlan) (*models.IaCPlanDb, error) {
@@ -39,7 +39,7 @@ func (i IacPlanMapper[TDao, T]) RevertMap(aggregate *aggregates.IacPlan) (*model
 		return nil, errors.New("can't map nil IaC")
 	}
 
-	planJson, planType, planChanges, planChangeSummary := aggregate.Composite()
+	planJson, planType, planChanges, planChangeSummary, planRaw := aggregate.Composite()
 
 	changes, err := json.Marshal(planChanges)
 	if err != nil {
@@ -63,5 +63,6 @@ func (i IacPlanMapper[TDao, T]) RevertMap(aggregate *aggregates.IacPlan) (*model
 		PlanJson:      planJson,
 		PlanType:      string(planType),
 		Config:        config,
+		PlanRaw:       planRaw,
 	}, nil
 }

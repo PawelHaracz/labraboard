@@ -27,7 +27,7 @@ func TestIaCPlanAddPlan(t *testing.T) {
 	aggregate, _ := NewIacPlan(uuid.New(), Terraform, nil)
 
 	//act
-	aggregate.AddPlan(planJson)
+	aggregate.AddPlan(planJson, nil)
 
 	assert.Equal(t, aggregate.planJson, planJson)
 }
@@ -41,7 +41,7 @@ func TestIaCPlan_ChangesBasedOnPlan_ValidChangeCount(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	planChanges := models.NewIacTerraformPlanJson(planJson, plan)
+	planChanges := models.NewIacTerraformPlanJson(planJson, plan, nil)
 
 	//act
 	aggregate.AddChanges(planChanges.GetChanges()...)
@@ -62,7 +62,7 @@ func TestIaCPlan_ChangesBasedOnPlan_ValidResourceChanges(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	planChanges := models.NewIacTerraformPlanJson(planJson, plan)
+	planChanges := models.NewIacTerraformPlanJson(planJson, plan, nil)
 
 	//act
 	aggregate.AddChanges(planChanges.GetChanges()...)

@@ -7,6 +7,7 @@ import (
 	json2 "encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
@@ -15,6 +16,7 @@ import (
 	"labraboard/internal/helpers"
 	"labraboard/internal/logger"
 	"labraboard/internal/models"
+	"os"
 )
 
 type TofuIacService struct {
@@ -112,7 +114,56 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 		return nil, errors.New("Cannot reade plan")
 	}
 
-	planChanges := models.NewIacTerraformPlanJson(jsonPlan, iacPlanDeserialized)
+	planContent, err := os.ReadFile(planPath) //read the content of file
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
+	}
+
+	planChanges := models.NewIacTerraformPlanJson(jsonPlan, iacPlanDeserialized, planContent)
 
 	return planChanges, nil
+}
+
+func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, variables []string, planPath string, ctx context.Context) (interface{}, error) {
+	log := logger.GetWitContext(ctx)
+	if planPath == "" {
+		var err = errors.New("plan path is empty")
+		log.Error().Err(err)
+		return nil, err
+	}
+
+	var b bytes.Buffer
+	jsonWriter := bufio.NewWriter(&b)
+	applyConfig := []tfexec.ApplyOption{
+		tfexec.Lock(true),
+		tfexec.Destroy(false),
+		tfexec.Refresh(false),
+		tfexec.DirOrPlan(planPath),
+	}
+
+	if len(variables) > 0 {
+		for _, v := range variables {
+			applyConfig = append(applyConfig, tfexec.Var(v))
+		}
+	}
+	if len(envs) > 0 {
+		err := svc.tf.SetEnv(envs)
+		if err != nil {
+			return nil, err
+		}
+	}
+	log.Info().Msgf("Apply plan %s", planId.String())
+
+	err := svc.tf.ApplyJSON(ctx, jsonWriter, applyConfig...)
+	if err != nil {
+		log.Error().Err(err)
+		return nil, err
+	}
+	if err = jsonWriter.Flush(); err != nil {
+		return nil, errors.New("error running Flush")
+	}
+	r := bytes.NewReader(b.Bytes())
+	iacDeserialized, err := svc.serializer.DeserializeJsonl(r)
+	return iacDeserialized, nil //todo
 }

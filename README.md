@@ -62,6 +62,8 @@ Upps here should be demo video - no worry, I will be soon! - Now check the API o
 - [ ] Clean solution to be more DDD
 - [ ] Create Plan changes during run, what was happened during the time
 - [ ] Apply Mechanism to handle the state
+  - [ ] Apply based on the Plan
+  - [ ] Backup before apply using ApplyOptions.Backup
 - [ ] Integrate with the Git
 - [ ] Handle other version than version 4.0 of tf 
 - [ ] Handle multiple version of tf and tofu

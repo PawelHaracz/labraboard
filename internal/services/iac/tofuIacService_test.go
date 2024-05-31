@@ -20,5 +20,7 @@ func TestNewTofuIacService(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 
-	assert.NotEqual(t, p.GetPlan(), nil)
+	planJson, planRaw := p.GetPlan()
+	assert.NotEqual(t, planJson, nil)
+	assert.NotEqual(t, planRaw, nil)
 }

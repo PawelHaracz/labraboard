@@ -25,6 +25,7 @@ type IacPlan struct {
 	changes       []iacPlans.ChangesIacPlan
 	planType      IaCPlanType
 	planJson      []byte
+	planRaw       []byte
 }
 
 func NewIacPlan(id uuid.UUID, planType IaCPlanType, historyConfig *iacPlans.HistoryProjectConfig) (*IacPlan, error) {
@@ -35,7 +36,7 @@ func NewIacPlan(id uuid.UUID, planType IaCPlanType, historyConfig *iacPlans.Hist
 	}, nil
 }
 
-func NewIacPlanExplicit(id uuid.UUID, planType IaCPlanType, config *iacPlans.HistoryProjectConfig, summary *iacPlans.ChangeSummaryIacPlan, changes []iacPlans.ChangesIacPlan, planJson []byte) (*IacPlan, error) {
+func NewIacPlanExplicit(id uuid.UUID, planType IaCPlanType, config *iacPlans.HistoryProjectConfig, summary *iacPlans.ChangeSummaryIacPlan, changes []iacPlans.ChangesIacPlan, planJson []byte, planRaw []byte) (*IacPlan, error) {
 	return &IacPlan{
 		id:            id,
 		planType:      planType,
@@ -43,11 +44,13 @@ func NewIacPlanExplicit(id uuid.UUID, planType IaCPlanType, config *iacPlans.His
 		changeSummary: summary,
 		changes:       changes,
 		planJson:      planJson,
+		planRaw:       planRaw,
 	}, nil
 }
 
-func (p *IacPlan) AddPlan(plan []byte) {
+func (p *IacPlan) AddPlan(plan []byte, planRaw []byte) {
 	p.planJson = plan
+	p.planRaw = planRaw
 }
 
 func newChangeIacPlanner(resourceType string, resourceName string, provider string, action iacPlans.PlanTypeAction) *iacPlans.ChangesIacPlan {
@@ -105,11 +108,11 @@ func (plan *IacPlan) GetPlanJson() string {
 	return string(plan.planJson)
 }
 
-func (plan *IacPlan) Composite() (planJson []byte, planType IaCPlanType, changes []iacPlans.ChangesIacPlan, summary iacPlans.ChangeSummaryIacPlan) {
+func (plan *IacPlan) Composite() (planJson []byte, planType IaCPlanType, changes []iacPlans.ChangesIacPlan, summary iacPlans.ChangeSummaryIacPlan, planRaw []byte) {
 	if plan.changeSummary == nil {
-		return plan.planJson, plan.planType, plan.changes, iacPlans.ChangeSummaryIacPlan{Add: 0, Change: 0, Remove: 0}
+		return plan.planJson, plan.planType, plan.changes, iacPlans.ChangeSummaryIacPlan{Add: 0, Change: 0, Remove: 0}, plan.planRaw
 	}
-	return plan.planJson, plan.planType, plan.changes, *plan.changeSummary
+	return plan.planJson, plan.planType, plan.changes, *plan.changeSummary, plan.planRaw
 }
 
 func (p *IacPlan) GetPlanType() string {

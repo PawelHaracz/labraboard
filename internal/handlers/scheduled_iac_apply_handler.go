@@ -8,6 +8,7 @@ import (
 	"labraboard/internal/eventbus/events"
 	"labraboard/internal/logger"
 	"labraboard/internal/repositories"
+	"labraboard/internal/services/iac"
 )
 
 type scheduledIaCApplyHandler struct {
@@ -45,10 +46,26 @@ func (handler *scheduledIaCApplyHandler) handle(event events.IacApplyScheduled, 
 		Str("projectId", event.ProjectId.String()).
 		Str("owner", event.Owner).
 		Logger()
-	_, err := handler.unitOfWork.IacPlan.Get(event.PlanId, log.WithContext(ctx))
+	//_, err := handler.unitOfWork.IacPlan.Get(event.PlanId, log.WithContext(ctx))
+
+	assembler := iac.NewAssembler(handler.unitOfWork)
+
+	var input = iac.Input{
+		ProjectId:    event.ProjectId,
+		PlanId:       event.PlanId,
+		Variables:    nil,
+		EnvVariables: nil,
+		CommitName:   "",
+		CommitType:   "",
+		RepoPath:     "",
+	}
+
+	_, err := assembler.Assemble(input, log.WithContext(ctx))
 	if err != nil {
 		log.Error().Err(err)
 		return
 	}
+	//save tfplan to tfplan
+	//run apply
 
 }
