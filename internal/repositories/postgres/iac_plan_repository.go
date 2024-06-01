@@ -59,6 +59,7 @@ func (repo *IaCPlanRepository) Update(iac *aggregates.IacPlan, ctx context.Conte
 	old.Changes = i.Changes
 	old.ChangeSummary = i.ChangeSummary
 	old.PlanJson = i.PlanJson
+	old.PlanRaw = i.PlanRaw
 	result := repo.database.GormDB.Save(&old)
 	return result.Error
 }

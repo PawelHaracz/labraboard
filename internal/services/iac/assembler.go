@@ -24,6 +24,7 @@ type Output struct {
 	CommitType   models.CommitType
 	RepoPath     string
 	RepoUrl      string
+	PlanRaw      []byte
 }
 
 type Assembler struct {
@@ -144,6 +145,13 @@ func (assembler *Assembler) Assemble(input Input, ctx context.Context) (Output, 
 			variableMap[key] = val
 		}
 	}
+
+	if plan != nil {
+		if planRaw := plan.GetPlanRaw(); len(planRaw) != 0 {
+			copy(output.PlanRaw, planRaw)
+		}
+	}
+
 	output.EnvVariables = voEnvVariables
 	output.Variables = variableMap
 
@@ -160,7 +168,7 @@ func (output Output) InlineVariable() []string {
 }
 
 func (output Output) InlineEnvVariable() map[string]string {
-	var envVariables map[string]string
+	var envVariables = map[string]string{}
 	for _, env := range output.EnvVariables {
 		envVariables[env.Name] = env.Value
 	}

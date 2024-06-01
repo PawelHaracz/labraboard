@@ -118,3 +118,5 @@ func (plan *IacPlan) Composite() (planJson []byte, planType IaCPlanType, changes
 func (p *IacPlan) GetPlanType() string {
 	return string(p.planType)
 }
+
+func (p *IacPlan) GetPlanRaw() []byte { return p.planRaw }

@@ -95,7 +95,7 @@ func (dt *delayTask) Listen(ctx context.Context) {
 	tasks := make([]task, len(resultSet))
 
 	if len(tasks) == 0 {
-		log.Info().Msg("nothing to publish")
+		log.Trace().Msg("nothing to publish")
 		return
 	}
 

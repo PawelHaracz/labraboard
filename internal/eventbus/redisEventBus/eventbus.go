@@ -50,15 +50,22 @@ func (r *EventBus) Subscribe(key events.EventName, ctx context.Context) chan []b
 	go func() {
 		defer close(item) //check it
 		for {
-			msg, err := subscriber.ReceiveMessage(ctx)
-			if err != nil {
-				// handle error, for example log it and return
-				log.Error().Err(err)
-				return
-			}
+			msg, err := subscriber.Receive(ctx)
+			switch v := msg.(type) {
+			case redis.Message:
+				if err != nil {
+					// handle error, for example log it and return
+					log.Error().Err(err)
+					return
+				}
 
-			item <- []byte(msg.Payload)
-			log.Info().Msgf("Received message from %s channel", msg.Channel)
+				item <- []byte(v.Payload)
+				log.Info().Msgf("Received message from %s channel", v.Channel)
+			case redis.Subscription:
+				log.Info().Msgf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
+			case error:
+				log.Error().Err(v).Msg("cannot receive message")
+			}
 		}
 	}()
 

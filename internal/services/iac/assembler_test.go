@@ -221,6 +221,54 @@ func TestAssembler_Assemble(t *testing.T) {
 	})
 }
 
+func TestAssembler_Inline(t *testing.T) {
+	output := Output{
+		ProjectId: uuid.New(),
+		PlanId:    uuid.New(),
+		Variables: map[string]string{
+			"TEST1": "FOO",
+			"BAR":   "RAB",
+		},
+		EnvVariables: []valueobjects.IaCEnv{
+			{
+				Name:      "HERO",
+				Value:     "FLASH",
+				HasSecret: false,
+			},
+			{
+				Name:      "BODY",
+				Value:     "head",
+				HasSecret: true,
+			},
+		},
+		CommitName: "",
+		CommitType: "",
+		RepoPath:   "",
+		RepoUrl:    "",
+		PlanRaw:    nil,
+	}
+
+	t.Run("inline_variables", func(t *testing.T) {
+		variables := output.InlineVariable()
+
+		assert.Equal(t, 2, len(variables))
+		assert.Equal(t, "TEST1=FOO", variables[0])
+		assert.Equal(t, "BAR=RAB", variables[1])
+	})
+
+	t.Run("inlinve_env", func(t *testing.T) {
+		var expected = map[string]string{
+			"HERO": "FLASH",
+			"BODY": "head",
+		}
+
+		envs := output.InlineEnvVariable()
+
+		assert.Equal(t, 2, len(envs))
+		assert.EqualValues(t, expected, envs)
+	})
+}
+
 func Arrange(uow *repositories.UnitOfWork) (uuid.UUID, []uuid.UUID) {
 	var envs = []*valueobjects.IaCEnv{
 		{

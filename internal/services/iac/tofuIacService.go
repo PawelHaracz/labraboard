@@ -114,9 +114,9 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 		return nil, errors.New("Cannot reade plan")
 	}
 
-	planContent, err := os.ReadFile(planPath) //read the content of file
+	planContent, err := os.ReadFile(fmt.Sprintf("%s/%s", svc.iacFolderPath, planPath)) //read the content of file
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Msg(err.Error())
 		return nil, err
 	}
 

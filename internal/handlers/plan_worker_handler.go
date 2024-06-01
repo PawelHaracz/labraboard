@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
@@ -42,34 +43,18 @@ func (handler *triggeredPlanHandler) Handle(ctx context.Context) {
 		if err != nil {
 			log.Error().Err(fmt.Errorf("cannot handle message type %T", event))
 		}
-		log.Info().Msgf("Received message: %s", msg)
-		handler.handlePlanTriggered(event, log.WithContext(ctx))
+		log.Trace().Msgf("Received message: %s", msg)
+		err = handler.handlePlanTriggered(event, log.WithContext(ctx))
+		if err != nil {
+			log.Error().Err(err).Msgf("Cannot successful create plan %s", event.PlanId)
+		} else {
+			log.Info().Msgf("successful create the plan %s", event.PlanId)
+		}
 	}
 
 }
 
-func createBackendFile(path string, statePath string) error {
-	content := `terraform {
-  backend "local" {
-    path = "%s"
-  }
-}`
-
-	file, err := os.Create(fmt.Sprintf("%s/backend_override.tf", path))
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = fmt.Fprintf(file, content, statePath)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggered, ctx context.Context) {
+func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggered, ctx context.Context) error {
 	log := logger.GetWitContext(ctx).With().Str("planId", obj.PlanId.String()).Str("projectId", obj.ProjectId.String()).Logger()
 	var input = iacSvc.Input{
 		ProjectId:    obj.ProjectId,
@@ -84,14 +69,15 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 
 	if err != nil {
 		log.Error().Err(err)
-		return
+		return errors.Wrap(err, "Cannot assembly of event")
 	}
+
 	folderPath := fmt.Sprintf("/tmp/%s", assembly.PlanId)
 	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, assembly.RepoPath)
 
 	gitRepo, err := git.PlainClone(folderPath, false, &git.CloneOptions{
 		URL:      assembly.RepoUrl,
-		Progress: os.Stdout,
+		Progress: nil, //os.Stdout,
 	})
 
 	defer func(folderPath string) {
@@ -106,47 +92,52 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 	case models.TAG:
 		tag, err := gitRepo.Tag(assembly.CommitName)
 		if err != nil {
-			log.Error().Err(err)
-			return
+			log.Error().Err(err).Msg(err.Error())
+			return errors.Wrap(err, fmt.Sprintf("Cannot checkin tag %s", assembly.CommitName))
 		}
 		commitSha = tag.Hash().String()
 	case models.SHA:
 		object, err := gitRepo.CommitObject(plumbing.NewHash(assembly.CommitName))
 		if err != nil {
-			log.Error().Err(err)
-			return
+			log.Error().Err(err).Msg(err.Error())
+			return errors.Wrap(err, fmt.Sprintf("Cannot checkin commit %s", assembly.CommitName))
 		}
 		commitSha = object.Hash.String()
 	case models.BRANCH:
-		branchConfig, err := gitRepo.CommitObject(plumbing.NewHash(assembly.CommitName))
+		branchConfig, err := gitRepo.Branch(assembly.CommitName)
 		if err != nil {
-			log.Error().Err(err)
-			return
+			log.Error().Err(err).Msg(err.Error())
+			return errors.Wrap(err, fmt.Sprintf("Cannot checkin branch %s", assembly.CommitName))
 		}
-		commitSha = branchConfig.Hash.String()
+		commitSha = branchConfig.Name //fix to have hash
 	}
 
 	if err = createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
 		log.Error().Err(err)
-		return
+		return errors.Wrap(err, "Cannot create backend")
 	}
 
 	tofu, err := iacSvc.NewTofuIacService(tofuFolderPath)
 	if err != nil {
 		log.Error().Err(err)
-		return
+		return errors.Wrap(err, "Cannot initialize tofu")
+	}
+
+	iac, err := handler.unitOfWork.IacRepository.Get(input.ProjectId, log.WithContext(ctx))
+	if err != nil {
+		log.Error().Err(err).Msg("missing project")
+		return errors.Wrap(err, "missing project")
 	}
 
 	iacTerraformPlanJson, err := tofu.Plan(assembly.InlineEnvVariable(), assembly.InlineVariable(), log.WithContext(ctx))
-	iac, err := handler.unitOfWork.IacRepository.Get(input.ProjectId, log.WithContext(ctx))
 	if err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
 		log.Warn().Err(err).Msg(err.Error())
 		if err = handler.unitOfWork.IacRepository.Update(iac, log.WithContext(ctx)); err != nil {
 			log.Warn().Err(err).Msg(err.Error())
-			return
+			return errors.Wrap(err, "cannot update iac")
 		}
-		return
+		return errors.Wrap(err, "failed generate plan")
 	}
 
 	historyEnvs := make([]vo.IaCEnv, len(assembly.EnvVariables))
@@ -177,24 +168,26 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		plan, err = aggregates.NewIacPlan(obj.PlanId, aggregates.Tofu, historyConfiguration)
 		if err != nil {
 			log.Error().Err(err)
-			return
+			return errors.Wrap(err, "cannot create new plan aggregate")
 		}
 		if err = handler.unitOfWork.IacPlan.Add(plan, log.WithContext(ctx)); err != nil {
 			log.Error().Err(err)
-			return
+			return errors.Wrap(err, "cannot save plan aggregate into db")
 		}
 	}
+
 	plan.AddPlan(iacTerraformPlanJson.GetPlan())
 	plan.AddChanges(iacTerraformPlanJson.GetChanges()...)
 	iac.UpdatePlan(obj.PlanId, vo.Succeed) //optimistic change :)
-
 	if err = handler.unitOfWork.IacPlan.Update(plan, log.WithContext(ctx)); err != nil {
 		iac.UpdatePlan(obj.PlanId, vo.Failed)
-		log.Error().Err(err)
-		return
+		log.Error().Err(err).Msg("Cannot update plan aggregate into db")
+		return errors.Wrap(err, "Cannot update plan aggregate into db")
 	}
 	if err = handler.unitOfWork.IacRepository.Update(iac, log.WithContext(ctx)); err != nil {
 		log.Error().Err(err)
-		return
+		return errors.Wrap(err, "Cannot update iac aggregate into db")
 	}
+	log.Info().Msg("successful handle the event")
+	return nil
 }

@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="monolith" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="labraboard" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="--config $PROJECT_DIR$/config.yaml" />
+    <kind value="PACKAGE" />
+    <package value="labraboard/cmd/monolith" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/cmd/monolith/main.go" />
+    <method v="2" />
+  </configuration>
+</component>
