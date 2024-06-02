@@ -38,7 +38,7 @@ services:
     command: ./handlers
     build:
       context: ./
-      dockerfile:  Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       - db
       - cache

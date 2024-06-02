@@ -4,19 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
 	eb "labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
 	"labraboard/internal/logger"
-	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	iacSvc "labraboard/internal/services/iac"
 	vo "labraboard/internal/valueobjects"
 	"labraboard/internal/valueobjects/iacPlans"
-	"os"
 )
 
 // /todo redesing how to treat plan aggregate to keep whole runs history
@@ -75,42 +71,19 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 	folderPath := fmt.Sprintf("/tmp/%s", assembly.PlanId)
 	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, assembly.RepoPath)
 
-	gitRepo, err := git.PlainClone(folderPath, false, &git.CloneOptions{
-		URL:      assembly.RepoUrl,
-		Progress: nil, //os.Stdout,
-	})
+	git, err := iacSvc.GitClone(assembly.RepoUrl, folderPath, assembly.CommitName, assembly.CommitType)
+	if err != nil {
+		log.Error().Err(err).Msg(err.Error())
+		return errors.Wrap(err, fmt.Sprintf("Cannot checkin tag %s", assembly.CommitName))
+	}
 
-	defer func(folderPath string) {
-		err = os.RemoveAll(folderPath)
+	defer func(git *iacSvc.Git) {
+		err = git.Clear()
 		if err != nil {
 			log.Error().Err(err)
 			return
 		}
-	}(folderPath)
-	var commitSha = ""
-	switch assembly.CommitType {
-	case models.TAG:
-		tag, err := gitRepo.Tag(assembly.CommitName)
-		if err != nil {
-			log.Error().Err(err).Msg(err.Error())
-			return errors.Wrap(err, fmt.Sprintf("Cannot checkin tag %s", assembly.CommitName))
-		}
-		commitSha = tag.Hash().String()
-	case models.SHA:
-		object, err := gitRepo.CommitObject(plumbing.NewHash(assembly.CommitName))
-		if err != nil {
-			log.Error().Err(err).Msg(err.Error())
-			return errors.Wrap(err, fmt.Sprintf("Cannot checkin commit %s", assembly.CommitName))
-		}
-		commitSha = object.Hash.String()
-	case models.BRANCH:
-		branchConfig, err := gitRepo.Branch(assembly.CommitName)
-		if err != nil {
-			log.Error().Err(err).Msg(err.Error())
-			return errors.Wrap(err, fmt.Sprintf("Cannot checkin branch %s", assembly.CommitName))
-		}
-		commitSha = branchConfig.Name //fix to have hash
-	}
+	}(git)
 
 	if err = createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
 		log.Error().Err(err)
@@ -158,7 +131,7 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 	plan, err := handler.unitOfWork.IacPlan.Get(obj.PlanId, log.WithContext(ctx))
 	if err != nil {
 		historyConfiguration := &iacPlans.HistoryProjectConfig{
-			GitSha:   commitSha,
+			GitSha:   git.GetCommitSha(),
 			GitPath:  assembly.RepoPath,
 			GitUrl:   assembly.RepoUrl,
 			Envs:     historyEnvs,
