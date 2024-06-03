@@ -6,12 +6,15 @@ import (
 	"github.com/redis/go-redis/v9"
 	"labraboard/internal/eventbus/events"
 	"labraboard/internal/logger"
+	"sync"
 )
 
 type EventBusConfiguration func(os *EventBus) error
 
 type EventBus struct {
 	redisClient *redis.Client
+	subs        map[events.EventName][]chan []byte
+	mu          sync.RWMutex
 }
 
 func NewRedisEventBus(ctx context.Context, configs ...EventBusConfiguration) (*EventBus, error) {
@@ -32,6 +35,7 @@ func NewRedisEventBus(ctx context.Context, configs ...EventBusConfiguration) (*E
 		return nil, errors.New("Cannot ping redisEventBus using client")
 	}
 
+	eb.subs = make(map[events.EventName][]chan []byte)
 	return eb, nil
 }
 
@@ -43,33 +47,26 @@ func WithRedis(redisClient *redis.Client) EventBusConfiguration {
 }
 
 func (r *EventBus) Subscribe(key events.EventName, ctx context.Context) chan []byte {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	log := logger.GetWitContext(ctx)
-	subscriber := r.redisClient.Subscribe(ctx, string(key))
 
-	item := make(chan []byte)
+	subscriber := r.redisClient.Subscribe(log.WithContext(ctx), string(key))
+
+	channel := subscriber.Channel()
+
+	ch := make(chan []byte, 1)
+	r.subs[key] = append(r.subs[key], ch)
 	go func() {
-		defer close(item) //check it
 		for {
-			msg, err := subscriber.Receive(ctx)
-			switch v := msg.(type) {
-			case redis.Message:
-				if err != nil {
-					// handle error, for example log it and return
-					log.Error().Err(err)
-					return
-				}
-
-				item <- []byte(v.Payload)
-				log.Info().Msgf("Received message from %s channel", v.Channel)
-			case redis.Subscription:
-				log.Info().Msgf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
-			case error:
-				log.Error().Err(v).Msg("cannot receive message")
+			select {
+			case msg := <-channel:
+				ch <- []byte(msg.Payload)
 			}
 		}
 	}()
+	return ch
 
-	return item
 }
 
 func (r *EventBus) Unsubscribe(key events.EventName, ch chan []byte, ctx context.Context) {
@@ -77,6 +74,8 @@ func (r *EventBus) Unsubscribe(key events.EventName, ch chan []byte, ctx context
 }
 
 func (r *EventBus) Publish(key events.EventName, event events.Event, ctx context.Context) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	log := logger.GetWitContext(ctx)
 	if err := r.redisClient.Publish(ctx, string(key), event).Err(); err != nil {
 		log.Error().Err(err)

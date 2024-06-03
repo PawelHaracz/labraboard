@@ -135,13 +135,13 @@ func (c *TerraformPlanController) ApplyTerraformPlan(g *gin.Context) {
 
 	parsedProjectId, err := uuid.Parse(projectId)
 	if err != nil {
-		l.Warn().Err(err).Msg("cannot parsed uuid")
+		l.Warn().Err(err).Msg("cannot parsed projectId")
 		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
 		return
 	}
-	parsedPlanId, err := uuid.Parse(projectId)
+	parsedPlanId, err := uuid.Parse(planId)
 	if err != nil {
-		l.Warn().Err(err).Msg("cannot parsed uuid")
+		l.Warn().Err(err).Msg("cannot parsed planId")
 		g.JSON(http.StatusNotFound, gin.H{"message": "Not Found"})
 		return
 	}

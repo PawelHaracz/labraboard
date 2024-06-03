@@ -28,7 +28,7 @@ func newScheduledIaCApplyHandler(eventSubscriber eb.EventSubscriber, unitOfWork 
 
 func (handler *scheduledIaCApplyHandler) Handle(ctx context.Context) {
 	log := logger.GetWitContext(ctx).With().Str("event", string(events.IAC_APPLY_SCHEDULED)).Logger()
-	locks := handler.eventSubscriber.Subscribe(events.SCHEDULED_PLAN, log.WithContext(ctx))
+	locks := handler.eventSubscriber.Subscribe(events.IAC_APPLY_SCHEDULED, log.WithContext(ctx))
 	for msg := range locks {
 		var event = events.IacApplyScheduled{}
 		err := json.Unmarshal(msg, &event)
@@ -104,7 +104,7 @@ func (handler *scheduledIaCApplyHandler) handle(event events.IacApplyScheduled, 
 		return nil
 	}
 
-	tofu, err := iac.NewTofuIacService(tofuFolderPath)
+	tofu, err := iac.NewTofuIacService(tofuFolderPath, log.WithContext(ctx))
 	if err != nil {
 		log.Error().Err(err)
 		return nil

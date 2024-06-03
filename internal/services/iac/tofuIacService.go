@@ -25,7 +25,7 @@ type TofuIacService struct {
 	serializer    *helpers.Serializer[entities.IacTerraformPlanJson]
 }
 
-func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
+func NewTofuIacService(iacFolderPath string, ctx context.Context) (*TofuIacService, error) {
 	if iacFolderPath == "" {
 		return nil, errors.New("iacFolderPath is empty")
 	}
@@ -35,7 +35,7 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 		Version: version.Must(version.NewVersion("1.7.5")),
 	}
 
-	execPath, err := installer.Install(context.Background())
+	execPath, err := installer.Install(ctx)
 	if err != nil {
 		return nil, errors.New("error installing Terraform")
 	}
@@ -50,7 +50,7 @@ func NewTofuIacService(iacFolderPath string) (*TofuIacService, error) {
 		tfexec.Upgrade(true),
 	}
 
-	err = tf.Init(context.Background(), config...)
+	err = tf.Init(ctx, config...)
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,7 @@ import (
 	"labraboard/internal/models"
 	"labraboard/internal/repositories"
 	vo "labraboard/internal/valueobjects"
+	"slices"
 )
 
 var (
@@ -101,7 +102,7 @@ func (assembler *Assembler) Assemble(input Input, ctx context.Context) (Output, 
 				continue
 			}
 			var updated = false
-			for i2, _ := range voEnvVariables {
+			for i2 := range voEnvVariables {
 				if voEnvVariables[i2].Name == env.Name {
 					voEnvVariables[i2].Value = env.Value
 					updated = true
@@ -148,7 +149,7 @@ func (assembler *Assembler) Assemble(input Input, ctx context.Context) (Output, 
 
 	if plan != nil {
 		if planRaw := plan.GetPlanRaw(); len(planRaw) != 0 {
-			copy(output.PlanRaw, planRaw)
+			output.PlanRaw = slices.Clone(planRaw)
 		}
 	}
 

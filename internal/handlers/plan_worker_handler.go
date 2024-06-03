@@ -90,7 +90,7 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		return errors.Wrap(err, "Cannot create backend")
 	}
 
-	tofu, err := iacSvc.NewTofuIacService(tofuFolderPath)
+	tofu, err := iacSvc.NewTofuIacService(tofuFolderPath, log.WithContext(ctx))
 	if err != nil {
 		log.Error().Err(err)
 		return errors.Wrap(err, "Cannot initialize tofu")

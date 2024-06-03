@@ -16,7 +16,12 @@ func createBackendFile(path string, statePath string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
 
 	_, err = fmt.Fprintf(file, content, statePath)
 	if err != nil {

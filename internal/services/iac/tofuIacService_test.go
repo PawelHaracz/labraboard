@@ -10,7 +10,7 @@ import (
 func TestNewTofuIacService(t *testing.T) {
 	t.SkipNow()
 	ctx := context.TODO()
-	iac, err := NewTofuIacService("/Users/pawelharacz/src/PoC/tf-example")
+	iac, err := NewTofuIacService("/Users/pawelharacz/src/PoC/tf-example", ctx)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}

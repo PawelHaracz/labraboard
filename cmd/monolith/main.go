@@ -47,7 +47,7 @@ func init() {
 func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, os.Kill)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx := context.Background()
 	nuCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(nuCPU)
 	log.Info().Int("GOMAXPROCS", nuCPU).Msgf("Running with %d CPUs\n", nuCPU)
@@ -92,7 +92,6 @@ func main() {
 
 	//go ConfigureWorkers(eventBus, uow, delayTaskManager)
 	routersInit := routers.InitRouter(eventBus, uow, delayTaskManager)
-	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
 		log.Panic().Err(err)
 	}
@@ -100,7 +99,6 @@ func main() {
 
 	allHandlers, err := handlerFactory.RegisterAllHandlers()
 	if err != nil {
-		cancel()
 		log.Panic().Err(err)
 	}
 	for _, handler := range append(allHandlers) {
@@ -111,16 +109,10 @@ func main() {
 
 	go func(ctx context.Context) {
 		for {
-			select {
-			case <-ctx.Done(): // if cancel() execute
-				return
-			default:
-				delayTaskManager.Listen(ctx)
-			}
+			delayTaskManager.Listen(ctx)
 			time.Sleep(1 * time.Minute)
 		}
 	}(ctx)
 
-	<-signalChan
-	cancel()
+	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 }
