@@ -17,6 +17,7 @@ import (
 	"labraboard/internal/logger"
 	"labraboard/internal/models"
 	"os"
+	"path/filepath"
 )
 
 type TofuIacService struct {
@@ -127,6 +128,8 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 
 func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, variables []string, planPath string, ctx context.Context) (interface{}, error) {
 	log := logger.GetWitContext(ctx)
+
+	tfLogPath := filepath.Join("/tmp/13e92193-7c36-4d01-9589-16d8e3c96ff5/apply", "test.log")
 	if planPath == "" {
 		var err = errors.New("plan path is empty")
 		log.Error().Err(err)
@@ -135,10 +138,11 @@ func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, varia
 
 	var b bytes.Buffer
 	jsonWriter := bufio.NewWriter(&b)
+
 	applyConfig := []tfexec.ApplyOption{
 		tfexec.Lock(true),
 		tfexec.Destroy(false),
-		tfexec.Refresh(false),
+		tfexec.Refresh(true),
 		tfexec.DirOrPlan(planPath),
 	}
 
@@ -153,11 +157,20 @@ func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, varia
 			return nil, err
 		}
 	}
-	log.Info().Msgf("Apply plan %s", planId.String())
 
-	err := svc.tf.ApplyJSON(ctx, jsonWriter, applyConfig...)
+	log.Info().Msgf("Apply plan %s", planId.String())
+	//svc.tf.SetLog("")
+	err := svc.tf.SetLogPath(tfLogPath)
 	if err != nil {
 		log.Error().Err(err)
+		return nil, err
+	}
+
+	//svc.tf.SetStderr(lpError)
+	//svc.tf.SetStdout(lpDebug)
+	err = svc.tf.ApplyJSON(ctx, jsonWriter, applyConfig...)
+	if err != nil {
+		log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	if err = jsonWriter.Flush(); err != nil {
