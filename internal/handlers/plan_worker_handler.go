@@ -15,18 +15,20 @@ import (
 	"labraboard/internal/valueobjects/iacPlans"
 )
 
-// /todo redesing how to treat plan aggregate to keep whole runs history
+// todo redesing how to treat plan aggregate to keep whole runs history
 type triggeredPlanHandler struct {
-	eventSubscriber eb.EventSubscriber
-	unitOfWork      *repositories.UnitOfWork
-	assembler       *iacSvc.Assembler
+	eventSubscriber  eb.EventSubscriber
+	unitOfWork       *repositories.UnitOfWork
+	assembler        *iacSvc.Assembler
+	serviceDiscovery string
 }
 
-func newTriggeredPlanHandler(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) (*triggeredPlanHandler, error) {
+func newTriggeredPlanHandler(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork, discovery string) (*triggeredPlanHandler, error) {
 	return &triggeredPlanHandler{
 		eventSubscriber,
 		unitOfWork,
 		iacSvc.NewAssembler(unitOfWork),
+		discovery,
 	}, nil
 }
 
@@ -85,7 +87,7 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		}
 	}(git)
 
-	if err = createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
+	if err = createLabraboardBackendFile(tofuFolderPath, handler.serviceDiscovery, assembly.ProjectId.String()); err != nil {
 		log.Error().Err(err)
 		return errors.Wrap(err, "Cannot create backend")
 	}

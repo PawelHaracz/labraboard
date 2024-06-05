@@ -15,14 +15,16 @@ import (
 )
 
 type scheduledIaCApplyHandler struct {
-	eventSubscriber eb.EventSubscriber
-	unitOfWork      *repositories.UnitOfWork
+	eventSubscriber  eb.EventSubscriber
+	unitOfWork       *repositories.UnitOfWork
+	serviceDiscovery string
 }
 
-func newScheduledIaCApplyHandler(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork) (*scheduledIaCApplyHandler, error) {
+func newScheduledIaCApplyHandler(eventSubscriber eb.EventSubscriber, unitOfWork *repositories.UnitOfWork, discovery string) (*scheduledIaCApplyHandler, error) {
 	return &scheduledIaCApplyHandler{
 		eventSubscriber,
 		unitOfWork,
+		discovery,
 	}, nil
 }
 
@@ -36,12 +38,15 @@ func (handler *scheduledIaCApplyHandler) Handle(ctx context.Context) {
 			log.Error().Err(fmt.Errorf("cannot handle message type %T", event))
 		}
 		log.Info().Msgf("Received message: %s", msg)
-		go handler.handle(event, log.WithContext(ctx))
+		err = handler.handle(event, log.WithContext(ctx))
+		if err != nil {
+			log.Error().Err(err).Msg("error to handle")
+			return
+		}
 	}
 }
 
 func (handler *scheduledIaCApplyHandler) handle(event events.IacApplyScheduled, ctx context.Context) error {
-	const tfPlanPath = "plan.tfplan"
 	log := logger.GetWitContext(ctx).
 		With().
 		Str("changeId", event.ChangeId.String()).
@@ -79,7 +84,7 @@ func (handler *scheduledIaCApplyHandler) handle(event events.IacApplyScheduled, 
 	folderPath := fmt.Sprintf("/tmp/%s/apply", output.PlanId)
 	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, output.RepoPath)
 
-	planPath := fmt.Sprintf("%s/%s", tofuFolderPath, tfPlanPath)
+	planPath := fmt.Sprintf("%s/%s", tofuFolderPath, iac.PlanPath)
 	git, err := iac.GitClone(output.RepoUrl, folderPath, output.CommitName, output.CommitType)
 	if err != nil {
 		log.Error().Err(err).Msg(err.Error())
@@ -94,7 +99,7 @@ func (handler *scheduledIaCApplyHandler) handle(event events.IacApplyScheduled, 
 		}
 	}(git)
 
-	if err = createBackendFile(tofuFolderPath, "./.local-state"); err != nil {
+	if err = createLabraboardBackendFile(tofuFolderPath, handler.serviceDiscovery, output.ProjectId.String()); err != nil {
 		log.Error().Err(err)
 		return nil
 	}
@@ -109,7 +114,7 @@ func (handler *scheduledIaCApplyHandler) handle(event events.IacApplyScheduled, 
 		log.Error().Err(err)
 		return nil
 	}
-	_, err = tofu.Apply(output.PlanId, output.InlineEnvVariable(), output.InlineVariable(), planPath, ctx)
+	_, err = tofu.Apply(output.PlanId, output.InlineEnvVariable(), ctx) //todo handle output
 
 	return nil
 }

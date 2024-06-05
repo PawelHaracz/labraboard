@@ -98,7 +98,7 @@ func (dt *delayTask) Listen(ctx context.Context) {
 		log.Trace().Msg("nothing to publish")
 		return
 	}
-
+	///todo fix it: {"EventName":"lease_lock","Content":{"Id":"dfd5677a-7b62-4444-8f81-5dfad0ce1627","Type":"terraform","LeaseTime":"2024-06-05T19:59:38.160871Z"},"WaitTime":3600000000000}
 	for i, t := range resultSet {
 		err = json.Unmarshal([]byte(t), &tasks[i])
 		if err != nil {

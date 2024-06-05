@@ -50,7 +50,7 @@ func TestPlanTriggerHandler(t *testing.T) {
 			Name: "2f5e1489476513212ae2f08c9a93beed7de47313",
 		},
 	}
-	handler, _ := newTriggeredPlanHandler(nil, uow)
+	handler, _ := newTriggeredPlanHandler(nil, uow, "")
 	handler.handlePlanTriggered(*obj, context.Background())
 	aggregate, _ = uow.IacRepository.Get(aggregate.GetID(), context.Background())
 	plan, err := aggregate.GetPlan(planId)

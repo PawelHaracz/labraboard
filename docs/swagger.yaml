@@ -15,6 +15,19 @@ definitions:
       value:
         type: string
     type: object
+  dtos.CreatePlan:
+    properties:
+      repoCommit:
+        type: string
+      repoCommitType:
+        type: string
+      repoPath:
+        type: string
+      variables:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
   dtos.CreateProjectDto:
     properties:
       'repositoryBranch:':
@@ -324,6 +337,12 @@ paths:
         name: projectId
         required: true
         type: string
+      - description: Plan to override
+        in: body
+        name: plan
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreatePlan'
       produces:
       - application/json
       responses:

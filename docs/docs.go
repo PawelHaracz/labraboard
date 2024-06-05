@@ -386,6 +386,15 @@ const docTemplate = `{
                         "name": "projectId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Plan to override",
+                        "name": "plan",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.CreatePlan"
+                        }
                     }
                 ],
                 "responses": {
@@ -596,6 +605,26 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "string"
+                }
+            }
+        },
+        "dtos.CreatePlan": {
+            "type": "object",
+            "properties": {
+                "repoCommit": {
+                    "type": "string"
+                },
+                "repoCommitType": {
+                    "type": "string"
+                },
+                "repoPath": {
+                    "type": "string"
+                },
+                "variables": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             }
         },

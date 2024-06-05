@@ -24,6 +24,7 @@ func NewTerraformPlanController(iac *services.IacService) (*TerraformPlanControl
 // @Summary Method to run Terraform Plan for a given project and return the plan id
 // @Schemes http
 // @Param projectId path string true "project id"
+// @Param plan body dtos.CreatePlan true "Plan to override"
 // @Description
 // @Tags terraform
 // @Accept json
@@ -48,6 +49,7 @@ func (c *TerraformPlanController) CreateTerraformPlan(g *gin.Context) {
 	if err = g.BindJSON(&dto); err != nil {
 		l.Warn().Err(err)
 		g.JSON(http.StatusBadRequest, gin.H{"message": "invalid payload"})
+		return
 	}
 
 	var planRunner = services.TerraformPlanRunner{

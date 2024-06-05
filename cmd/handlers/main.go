@@ -80,7 +80,7 @@ func main() {
 		log.Panic().Err(err)
 	}
 
-	handlerFactory := handlers.NewEventHandlerFactory(eventBus, eventBus, uow)
+	handlerFactory := handlers.NewEventHandlerFactory(eventBus, eventBus, uow, fmt.Sprintf("%s:%d", cfg.ServiceDiscovery, cfg.HttpPort))
 
 	allHandlers, err := handlerFactory.RegisterAllHandlers()
 	if err != nil {

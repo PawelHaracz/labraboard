@@ -57,12 +57,13 @@ Upps here should be demo video - no worry, I will be soon! - Now check the API o
   - [X] Add every method ctx to enrich logger
   - [X] Integrate handlers to use logger
 - [X] Handle scheduled plan in TerraformPlanner
-- [ ] Run plan using http backend 
+- [X] Run plan using http backend 
 - [ ] Access Token for Backend http
 - [ ] Clean solution to be more DDD
 - [ ] Create Plan changes during run, what was happened during the time
 - [ ] Apply Mechanism to handle the state
-  - [ ] Apply based on the Plan
+  - [X] Apply based on the Plan
+  - [ ] Save outputs as deployment, handle errors
   - [ ] Backup before apply using ApplyOptions.Backup
 - [ ] Integrate with the Git
 - [ ] Handle other version than version 4.0 of tf 

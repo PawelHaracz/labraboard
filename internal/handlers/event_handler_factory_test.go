@@ -7,7 +7,7 @@ import (
 )
 
 func TestEventHandlerFactory(t *testing.T) {
-	var factory = NewEventHandlerFactory(nil, nil, nil)
+	var factory = NewEventHandlerFactory(nil, nil, nil, "")
 	t.Run("Register Event that doesn't exist, should return null", func(t *testing.T) {
 		var Z events.EventName = "Z"
 		act, err := factory.RegisterHandler(Z)

@@ -162,6 +162,9 @@ func (assembler *Assembler) Assemble(input Input, ctx context.Context) (Output, 
 func (output Output) InlineVariable() []string {
 	var variables []string
 	for key, value := range output.Variables {
+		if key == "" || value == "" {
+			continue
+		}
 		variables = append(variables, fmt.Sprintf("%s=%s", key, value))
 	}
 	return variables
@@ -171,6 +174,9 @@ func (output Output) InlineVariable() []string {
 func (output Output) InlineEnvVariable() map[string]string {
 	var envVariables = map[string]string{}
 	for _, env := range output.EnvVariables {
+		if env.Name == "" || env.Value == "" {
+			continue
+		}
 		envVariables[env.Name] = env.Value
 	}
 	return envVariables
