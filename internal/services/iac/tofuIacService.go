@@ -22,9 +22,10 @@ import (
 const PlanPath = "plan.tfplan"
 
 type TofuIacService struct {
-	iacFolderPath string
-	tf            *tfexec.Terraform
-	serializer    *helpers.Serializer[entities.IacTerraformPlanJson]
+	iacFolderPath        string
+	tf                   *tfexec.Terraform
+	serializer           *helpers.Serializer[entities.IacTerraformPlanJson]
+	diagnosticSerializer *helpers.Serializer[entities.IacTerraformDiagnosticJson]
 }
 
 func NewTofuIacService(iacFolderPath string, ctx context.Context) (*TofuIacService, error) {
@@ -58,11 +59,13 @@ func NewTofuIacService(iacFolderPath string, ctx context.Context) (*TofuIacServi
 	}
 
 	serializer := helpers.NewSerializer[entities.IacTerraformPlanJson]()
+	diagnosticSerializer := helpers.NewSerializer[entities.IacTerraformDiagnosticJson]()
 
 	return &TofuIacService{
-		iacFolderPath: iacFolderPath,
-		tf:            tf,
-		serializer:    serializer,
+		iacFolderPath:        iacFolderPath,
+		tf:                   tf,
+		serializer:           serializer,
+		diagnosticSerializer: diagnosticSerializer,
 	}, nil
 }
 
@@ -128,14 +131,7 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 }
 
 func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, ctx context.Context) (interface{}, error) {
-
 	log := logger.GetWitContext(ctx)
-	//tfLogPath := filepath.Join("/tmp/13e92193-7c36-4d01-9589-16d8e3c96ff5/apply", "test.log")
-	//if planPath == "" {
-	//	err := errors.New("plan path is empty")
-	//	log.Error().Err(err)
-	//	return nil, err
-	//}
 
 	var b bytes.Buffer
 	jsonWriter := bufio.NewWriter(&b)
@@ -147,11 +143,6 @@ func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, ctx c
 		tfexec.DirOrPlan(fmt.Sprintf("%s/%s", svc.tf.WorkingDir(), PlanPath)),
 	}
 
-	//if len(variables) > 0 {
-	//	for _, v := range variables {
-	//		applyConfig = append(applyConfig, tfexec.Var(v))
-	//	}
-	//}
 	if len(envs) > 0 {
 		err := svc.tf.SetEnv(envs)
 		if err != nil {
@@ -160,25 +151,16 @@ func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, ctx c
 	}
 
 	log.Info().Msgf("Apply plan %s", planId.String())
-	//svc.tf.SetLog("")
-	//err := svc.tf.SetLogPath(tfLogPath)
-	//if err != nil {
-	//	log.Error().Err(err)
-	//	return nil, err
-	//}
 
-	//svc.tf.SetStderr(lpError)
-	//svc.tf.SetStdout(lpDebug)
-	//todo handle outputs: {"@level":"error","@message":"Error: Error creating Resource Group \"rg-starterterraform-staging-main\": resources.GroupsClient#CreateOrUpdate: Failure responding to request: StatusCode=400 -- Original Error: autorest/azure: Service returned an error. Status=400 Code=\"LocationNotAvailableForResourceGroup\" Message=\"The provided location 'polandcenter' is not available for resource group. List of available regions is 'eastasia,southeastasia,australiaeast,australiasoutheast,brazilsouth,canadacentral,canadaeast,switzerlandnorth,germanywestcentral,eastus2,eastus,centralus,northcentralus,francecentral,uksouth,ukwest,centralindia,southindia,jioindiawest,italynorth,japaneast,japanwest,koreacentral,koreasouth,mexicocentral,northeurope,norwayeast,polandcentral,qatarcentral,spaincentral,swedencentral,uaenorth,westcentralus,westeurope,westus2,westus,southcentralus,westus3,southafricanorth,australiacentral,australiacentral2,israelcentral,westindia'.\"","@module":"terraform.ui","@timestamp":"2024-06-05T23:04:28.550164+02:00","diagnostic":{"severity":"error","summary":"Error creating Resource Group \"rg-starterterraform-staging-main\": resources.GroupsClient#CreateOrUpdate: Failure responding to request: StatusCode=400 -- Original Error: autorest/azure: Service returned an error. Status=400 Code=\"LocationNotAvailableForResourceGroup\" Message=\"The provided location 'polandcenter' is not available for resource group. List of available regions is 'eastasia,southeastasia,australiaeast,australiasoutheast,brazilsouth,canadacentral,canadaeast,switzerlandnorth,germanywestcentral,eastus2,eastus,centralus,northcentralus,francecentral,uksouth,ukwest,centralindia,southindia,jioindiawest,italynorth,japaneast,japanwest,koreacentral,koreasouth,mexicocentral,northeurope,norwayeast,polandcentral,qatarcentral,spaincentral,swedencentral,uaenorth,westcentralus,westeurope,westus2,westus,southcentralus,westus3,southafricanorth,australiacentral,australiacentral2,israelcentral,westindia'.\"","detail":"","address":"azurerm_resource_group.main","range":{"filename":"main.tf","start":{"line":8,"column":42,"byte":277},"end":{"line":8,"column":43,"byte":278}},"snippet":{"context":"resource \"azurerm_resource_group\" \"main\"","code":"resource \"azurerm_resource_group\" \"main\" {","start_line":8,"highlight_start_offset":41,"highlight_end_offset":42,"values":[]}},"type":"diagnostic"}
 	err := svc.tf.ApplyJSON(ctx, jsonWriter, applyConfig...)
 	if err != nil {
 		if err = jsonWriter.Flush(); err != nil {
 			return nil, errors.New("error running Flush")
 		}
-		//r := bytes.NewReader(b.Bytes())
-		//var iacDeserialized, err = svc.serializer.DeserializeJsonl(r)
-		log.Error().Err(err).Msg(string(b.Bytes()))
-		return nil, err
+		r := bytes.NewReader(b.Bytes())
+		iacDeserialized, err1 := svc.diagnosticSerializer.DeserializeJsonl(r)
+		log.Error().Err(err1).Msg(string(b.Bytes()))
+		return iacDeserialized, errors.Join(err, err1)
 	}
 	if err = jsonWriter.Flush(); err != nil {
 		return nil, errors.New("error running Flush")
