@@ -167,5 +167,5 @@ func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, ctx c
 	}
 	r := bytes.NewReader(b.Bytes())
 	iacDeserialized, err := svc.serializer.DeserializeJsonl(r)
-	return iacDeserialized, nil //todo
+	return iacDeserialized, nil
 }

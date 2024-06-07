@@ -37,7 +37,7 @@ type delayTask struct {
 
 type task struct {
 	EventName events.EventName
-	Content   events.Event
+	Content   []byte
 	WaitTime  time.Duration
 }
 
@@ -98,7 +98,7 @@ func (dt *delayTask) Listen(ctx context.Context) {
 		log.Trace().Msg("nothing to publish")
 		return
 	}
-	///todo fix it: {"EventName":"lease_lock","Content":{"Id":"dfd5677a-7b62-4444-8f81-5dfad0ce1627","Type":"terraform","LeaseTime":"2024-06-05T19:59:38.160871Z"},"WaitTime":3600000000000}
+
 	for i, t := range resultSet {
 		err = json.Unmarshal([]byte(t), &tasks[i])
 		if err != nil {
@@ -106,7 +106,12 @@ func (dt *delayTask) Listen(ctx context.Context) {
 			return
 		}
 		eventName := tasks[i].EventName
-		dt.publisher.Publish(eventName, tasks[i].Content, ctx)
+		content, err := events.Unmarshal(eventName, tasks[i].Content)
+		if err != nil {
+			log.Error().Err(err).Msg("cannot unmarshal content")
+			return
+		}
+		dt.publisher.Publish(eventName, content, ctx)
 
 	}
 
@@ -118,19 +123,20 @@ func (dt *delayTask) Listen(ctx context.Context) {
 
 }
 
-func (dt *delayTask) Publish(EventName events.EventName, Content events.Event, WaitTime time.Duration, ctx context.Context) {
+func (dt *delayTask) Publish(eventName events.EventName, content events.Event, waitTime time.Duration, ctx context.Context) {
+	bytes, _ := content.MarshalBinary()
 	t := &task{
-		EventName,
-		Content,
-		WaitTime,
+		eventName,
+		bytes,
+		waitTime,
 	}
 	log := logger.GetWitContext(ctx)
 	jsonValue, err := json.Marshal(t)
 	if err != nil {
-		log.Error().Err(err).Msg("JSON!!!")
+		log.Error().Err(err).Msg("cannot marshal task: JSON!!!")
 		return
 	}
-	taskReadyInSeconds := time.Now().Add(WaitTime).Unix()
+	taskReadyInSeconds := time.Now().Add(waitTime).Unix()
 	member := redis.Z{
 		Score:  float64(taskReadyInSeconds),
 		Member: jsonValue,
