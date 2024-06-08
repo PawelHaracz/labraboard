@@ -24,7 +24,7 @@ const PlanPath = "plan.tfplan"
 type TofuIacService struct {
 	iacFolderPath        string
 	tf                   *tfexec.Terraform
-	serializer           *helpers.Serializer[entities.IacTerraformPlanJson]
+	serializer           *helpers.Serializer[entities.IacTerraformOutputJson]
 	diagnosticSerializer *helpers.Serializer[entities.IacTerraformDiagnosticJson]
 }
 
@@ -58,7 +58,7 @@ func NewTofuIacService(iacFolderPath string, ctx context.Context) (*TofuIacServi
 		return nil, err
 	}
 
-	serializer := helpers.NewSerializer[entities.IacTerraformPlanJson]()
+	serializer := helpers.NewSerializer[entities.IacTerraformOutputJson]()
 	diagnosticSerializer := helpers.NewSerializer[entities.IacTerraformDiagnosticJson]()
 
 	return &TofuIacService{
@@ -73,12 +73,13 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 	log := logger.GetWitContext(ctx)
 	var b bytes.Buffer
 
+	var planPath = fmt.Sprintf("%s/%s", svc.tf.WorkingDir(), PlanPath)
 	jsonWriter := bufio.NewWriter(&b)
 	planConfig := []tfexec.PlanOption{
 		tfexec.Lock(true),
 		tfexec.Destroy(false),
 		tfexec.Refresh(false),
-		tfexec.Out(PlanPath),
+		tfexec.Out(planPath),
 	}
 
 	if len(variables) > 0 {
@@ -96,16 +97,30 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 	p, err := svc.tf.PlanJSON(context.Background(), jsonWriter, planConfig...)
 	log.Info().Msg("finished running plan")
 	if err != nil {
-		return nil, fmt.Errorf("%s: %v", "error running Plan", err)
+		if err = jsonWriter.Flush(); err != nil {
+			return nil, errors.New("error running Flush")
+		}
+		r := bytes.NewReader(b.Bytes())
+		iacDeserialized, err1 := svc.diagnosticSerializer.DeserializeJsonl(r)
+		if err1 != nil {
+			log.Error().Err(err1).Msg(string(b.Bytes()))
+		}
+		if len(iacDeserialized) != 0 {
+			log.Error().Err(err).Msg(iacDeserialized[0].Message)
+		} else {
+			log.Error().Err(errors.New("deserialize doesn't contain any items")).Msg(string(b.Bytes()))
+		}
+		return nil, errors.Join(fmt.Errorf("%s: %v", "error running Plan", err), err, err1, errors.New(iacDeserialized[0].Message))
 
 	}
-	if !p {
-		return nil, errors.New("plan is not finish well")
-	}
 
-	planJson, err := svc.tf.ShowPlanFile(context.Background(), PlanPath)
+	planJson, err := svc.tf.ShowPlanFile(context.Background(), planPath)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", "error running ShowPlanFile", err)
+	}
+	if !p {
+		log.Warn().Err(errors.New("plan is not finish well")).Msg("")
+		//return nil, errors.Join(errors.New("plan is not finish well"), err)
 	}
 
 	jsonPlan, err := json2.Marshal(planJson)
@@ -116,7 +131,7 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 
 	iacPlanDeserialized, err := svc.serializer.DeserializeJsonl(r)
 	if err != nil {
-		return nil, errors.New("Cannot reade plan")
+		return nil, errors.New("cannot reade plan")
 	}
 
 	planContent, err := os.ReadFile(fmt.Sprintf("%s/%s", svc.iacFolderPath, PlanPath)) //read the content of file
@@ -130,7 +145,7 @@ func (svc *TofuIacService) Plan(envs map[string]string, variables []string, ctx 
 	return planChanges, nil
 }
 
-func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, ctx context.Context) (interface{}, error) {
+func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, ctx context.Context) ([]entities.IacTerraformOutputJson, error) {
 	log := logger.GetWitContext(ctx)
 
 	var b bytes.Buffer
@@ -159,13 +174,24 @@ func (svc *TofuIacService) Apply(planId uuid.UUID, envs map[string]string, ctx c
 		}
 		r := bytes.NewReader(b.Bytes())
 		iacDeserialized, err1 := svc.diagnosticSerializer.DeserializeJsonl(r)
-		log.Error().Err(err1).Msg(string(b.Bytes()))
-		return iacDeserialized, errors.Join(err, err1)
+		if err1 != nil {
+			log.Error().Err(err1).Msg(string(b.Bytes()))
+		}
+		var msg = ""
+		if len(iacDeserialized) != 0 {
+			msg = iacDeserialized[len(iacDeserialized)-1].Message
+			log.Error().Err(err).Msg(msg)
+		} else {
+			msg = "deserialize doesn't contain any items"
+			log.Error().Err(errors.New(msg)).Msg(string(b.Bytes()))
+		}
+		return nil, errors.Join(err, err1, errors.New(msg))
 	}
 	if err = jsonWriter.Flush(); err != nil {
 		return nil, errors.New("error running Flush")
 	}
 	r := bytes.NewReader(b.Bytes())
+
 	iacDeserialized, err := svc.serializer.DeserializeJsonl(r)
 	return iacDeserialized, nil
 }

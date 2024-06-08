@@ -3,32 +3,32 @@ package aggregates
 import (
 	"github.com/google/uuid"
 	"labraboard/internal/entities"
-	"labraboard/internal/valueobjects/iacPlans"
+	"labraboard/internal/valueobjects/iac"
 )
 
-type IaCPlanType string
+type IaCDeploymentType string
 
 var (
-	Terraform IaCPlanType = "terraform"
-	Tofu      IaCPlanType = "tofu"
+	Terraform IaCDeploymentType = "terraform"
+	Tofu      IaCDeploymentType = "tofu"
 )
 
 var (
-	emptyPlanChange    = entities.IacTerraformPlanChangeJson{}
-	emptySummaryChange = entities.IacTerraformPlanSummaryChangesJson{}
+	emptyPlanChange    = entities.IacTerraformChangeJson{}
+	emptySummaryChange = entities.IacTerraformSummaryChangesJson{}
 )
 
 type IacPlan struct {
 	id            uuid.UUID
-	HistoryConfig *iacPlans.HistoryProjectConfig
-	changeSummary *iacPlans.ChangeSummaryIacPlan
-	changes       []iacPlans.ChangesIacPlan
-	planType      IaCPlanType
+	HistoryConfig *iac.HistoryProjectConfig
+	changeSummary *iac.ChangeSummaryIac
+	changes       []iac.ChangesIac
+	planType      IaCDeploymentType
 	planJson      []byte
 	planRaw       []byte
 }
 
-func NewIacPlan(id uuid.UUID, planType IaCPlanType, historyConfig *iacPlans.HistoryProjectConfig) (*IacPlan, error) {
+func NewIacPlan(id uuid.UUID, planType IaCDeploymentType, historyConfig *iac.HistoryProjectConfig) (*IacPlan, error) {
 	return &IacPlan{
 		id:            id,
 		planType:      planType,
@@ -36,7 +36,7 @@ func NewIacPlan(id uuid.UUID, planType IaCPlanType, historyConfig *iacPlans.Hist
 	}, nil
 }
 
-func NewIacPlanExplicit(id uuid.UUID, planType IaCPlanType, config *iacPlans.HistoryProjectConfig, summary *iacPlans.ChangeSummaryIacPlan, changes []iacPlans.ChangesIacPlan, planJson []byte, planRaw []byte) (*IacPlan, error) {
+func NewIacPlanExplicit(id uuid.UUID, planType IaCDeploymentType, config *iac.HistoryProjectConfig, summary *iac.ChangeSummaryIac, changes []iac.ChangesIac, planJson []byte, planRaw []byte) (*IacPlan, error) {
 	return &IacPlan{
 		id:            id,
 		planType:      planType,
@@ -53,8 +53,8 @@ func (p *IacPlan) AddPlan(plan []byte, planRaw []byte) {
 	p.planRaw = planRaw
 }
 
-func newChangeIacPlanner(resourceType string, resourceName string, provider string, action iacPlans.PlanTypeAction) *iacPlans.ChangesIacPlan {
-	return &iacPlans.ChangesIacPlan{
+func newChangeIacPlanner(resourceType string, resourceName string, provider string, action iac.PlanTypeAction) *iac.ChangesIac {
+	return &iac.ChangesIac{
 		ResourceType: resourceType,
 		ResourceName: resourceName,
 		Provider:     provider,
@@ -62,8 +62,8 @@ func newChangeIacPlanner(resourceType string, resourceName string, provider stri
 	}
 }
 
-func newChangeSummaryIacPlan(added int, changed int, removed int) *iacPlans.ChangeSummaryIacPlan {
-	return &iacPlans.ChangeSummaryIacPlan{
+func newChangeSummaryIacPlan(added int, changed int, removed int) *iac.ChangeSummaryIac {
+	return &iac.ChangeSummaryIac{
 		Add:    added,
 		Change: changed,
 		Remove: removed,
@@ -75,8 +75,8 @@ func (plan *IacPlan) GetID() uuid.UUID {
 	return plan.id
 }
 
-func (plan *IacPlan) AddChanges(plans ...entities.IacTerraformPlanJson) {
-	var changes []iacPlans.ChangesIacPlan
+func (plan *IacPlan) AddChanges(plans ...entities.IacTerraformOutputJson) {
+	var changes []iac.ChangesIac
 
 	for _, p := range plans {
 		if p.Type == entities.Version {
@@ -92,7 +92,7 @@ func (plan *IacPlan) AddChanges(plans ...entities.IacTerraformPlanJson) {
 			plan.changeSummary = summary
 
 		} else {
-			planner := newChangeIacPlanner(p.Change.Resource.ResourceType, p.Change.Resource.ResourceName, p.Change.Resource.Provider, iacPlans.PlanTypeAction(p.Change.Action))
+			planner := newChangeIacPlanner(p.Change.Resource.ResourceType, p.Change.Resource.ResourceName, p.Change.Resource.Provider, iac.PlanTypeAction(p.Change.Action))
 			changes = append(changes, *planner)
 		}
 	}
@@ -108,9 +108,9 @@ func (plan *IacPlan) GetPlanJson() string {
 	return string(plan.planJson)
 }
 
-func (plan *IacPlan) Composite() (planJson []byte, planType IaCPlanType, changes []iacPlans.ChangesIacPlan, summary iacPlans.ChangeSummaryIacPlan, planRaw []byte) {
+func (plan *IacPlan) Composite() (planJson []byte, planType IaCDeploymentType, changes []iac.ChangesIac, summary iac.ChangeSummaryIac, planRaw []byte) {
 	if plan.changeSummary == nil {
-		return plan.planJson, plan.planType, plan.changes, iacPlans.ChangeSummaryIacPlan{Add: 0, Change: 0, Remove: 0}, plan.planRaw
+		return plan.planJson, plan.planType, plan.changes, iac.ChangeSummaryIac{Add: 0, Change: 0, Remove: 0}, plan.planRaw
 	}
 	return plan.planJson, plan.planType, plan.changes, *plan.changeSummary, plan.planRaw
 }

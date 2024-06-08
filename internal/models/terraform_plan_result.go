@@ -6,11 +6,11 @@ import (
 
 type IacTerraformPlanJson struct {
 	plan    []byte
-	changes []entities.IacTerraformPlanJson
+	changes []entities.IacTerraformOutputJson
 	planRaw []byte
 }
 
-func NewIacTerraformPlanJson(plan []byte, changes []entities.IacTerraformPlanJson, planRaw []byte) *IacTerraformPlanJson {
+func NewIacTerraformPlanJson(plan []byte, changes []entities.IacTerraformOutputJson, planRaw []byte) *IacTerraformPlanJson {
 	return &IacTerraformPlanJson{
 		plan:    plan,
 		changes: changes,
@@ -21,8 +21,8 @@ func NewIacTerraformPlanJson(plan []byte, changes []entities.IacTerraformPlanJso
 func (p *IacTerraformPlanJson) GetPlan() (planJson []byte, planRaw []byte) {
 	return p.plan, p.planRaw
 }
-func (p *IacTerraformPlanJson) GetChanges() []entities.IacTerraformPlanJson {
-	var value = make([]entities.IacTerraformPlanJson, len(p.changes))
+func (p *IacTerraformPlanJson) GetChanges() []entities.IacTerraformOutputJson {
+	var value = make([]entities.IacTerraformOutputJson, len(p.changes))
 	for i, v := range p.changes {
 		value[i] = v
 	}

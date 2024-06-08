@@ -12,7 +12,7 @@ type IacApplyScheduled struct {
 	ChangeId  uuid.UUID
 	ProjectId uuid.UUID
 	PlanId    uuid.UUID
-	IacType   aggregates.IaCPlanType
+	IacType   aggregates.IaCDeploymentType
 	Owner     string
 }
 

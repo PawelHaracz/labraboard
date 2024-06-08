@@ -1,4 +1,4 @@
-package iacPlans
+package iac
 
 type PlanTypeAction string
 
@@ -8,7 +8,7 @@ var (
 	Delete PlanTypeAction = "delete"
 )
 
-type ChangesIacPlan struct {
+type ChangesIac struct {
 	ResourceType string
 	ResourceName string
 	Provider     string

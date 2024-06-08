@@ -10,7 +10,6 @@ import (
 	"labraboard/internal/repositories"
 	dbmemory "labraboard/internal/repositories/memory"
 	"labraboard/internal/valueobjects"
-	"labraboard/internal/valueobjects/iacPlans"
 	"testing"
 	"time"
 )
@@ -325,7 +324,7 @@ func Arrange(uow *repositories.UnitOfWork) (uuid.UUID, []uuid.UUID) {
 	iac, _ := aggregates.NewIac(uuid.New(), valueobjects.Terraform, plans, envs, repo, variables)
 	uow.IacRepository.Add(iac, context.TODO())
 
-	var historyConfig = &iacPlans.HistoryProjectConfig{
+	var historyConfig = &iac.HistoryProjectConfig{
 		GitSha:   "88864e896674402e4b54e0b8aa53b77aa18fb8dd",
 		GitUrl:   "https://github.com/PawelHaracz/labraboard/",
 		GitPath:  "",
@@ -336,7 +335,7 @@ func Arrange(uow *repositories.UnitOfWork) (uuid.UUID, []uuid.UUID) {
 	plan, _ := aggregates.NewIacPlan(planIds[1], aggregates.Terraform, historyConfig)
 	uow.IacPlan.Add(plan, context.TODO())
 
-	var historyConfig1 = &iacPlans.HistoryProjectConfig{
+	var historyConfig1 = &iac.HistoryProjectConfig{
 		GitSha:  "88864e896674402e4b54e0b8aa53b77aa18fb8dd",
 		GitUrl:  "https://github.com/PawelHaracz/labraboard/",
 		GitPath: "",

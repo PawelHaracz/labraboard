@@ -1,4 +1,4 @@
-package iacPlans
+package iac
 
 import "labraboard/internal/valueobjects"
 

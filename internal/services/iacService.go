@@ -293,5 +293,10 @@ func (svc *IacService) ScheduleApply(projectId uuid.UUID, planId uuid.UUID, ctx 
 
 	svc.publisher.Publish(events.IAC_APPLY_SCHEDULED, event, ctx)
 
+	aggregate := aggregates.NewIacDeployment(changeId, planId, projectId, aggregates.Terraform)
+
+	if err := svc.unitOfWork.IacDeployment.Add(aggregate, ctx); err != nil {
+		return uuid.Nil, err
+	}
 	return changeId, nil
 }

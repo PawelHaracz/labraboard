@@ -12,7 +12,7 @@ import (
 	"labraboard/internal/repositories"
 	iacSvc "labraboard/internal/services/iac"
 	vo "labraboard/internal/valueobjects"
-	"labraboard/internal/valueobjects/iacPlans"
+	"labraboard/internal/valueobjects/iac"
 )
 
 // todo redesing how to treat plan aggregate to keep whole runs history
@@ -98,7 +98,7 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 		return errors.Wrap(err, "Cannot initialize tofu")
 	}
 
-	iac, err := handler.unitOfWork.IacRepository.Get(input.ProjectId, log.WithContext(ctx))
+	iacAggregate, err := handler.unitOfWork.IacRepository.Get(input.ProjectId, log.WithContext(ctx))
 	if err != nil {
 		log.Error().Err(err).Msg("missing project")
 		return errors.Wrap(err, "missing project")
@@ -106,9 +106,9 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 
 	iacTerraformPlanJson, err := tofu.Plan(assembly.InlineEnvVariable(), assembly.InlineVariable(), log.WithContext(ctx))
 	if err != nil {
-		iac.UpdatePlan(obj.PlanId, vo.Failed)
+		iacAggregate.UpdatePlan(obj.PlanId, vo.Failed)
 		log.Warn().Err(err).Msg(err.Error())
-		if err = handler.unitOfWork.IacRepository.Update(iac, log.WithContext(ctx)); err != nil {
+		if err = handler.unitOfWork.IacRepository.Update(iacAggregate, log.WithContext(ctx)); err != nil {
 			log.Warn().Err(err).Msg(err.Error())
 			return errors.Wrap(err, "cannot update iac")
 		}
@@ -132,7 +132,7 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 
 	plan, err := handler.unitOfWork.IacPlan.Get(obj.PlanId, log.WithContext(ctx))
 	if err != nil {
-		historyConfiguration := &iacPlans.HistoryProjectConfig{
+		historyConfiguration := &iac.HistoryProjectConfig{
 			GitSha:   git.GetCommitSha(),
 			GitPath:  assembly.RepoPath,
 			GitUrl:   assembly.RepoUrl,
@@ -153,13 +153,13 @@ func (handler *triggeredPlanHandler) handlePlanTriggered(obj events.PlanTriggere
 
 	plan.AddPlan(iacTerraformPlanJson.GetPlan())
 	plan.AddChanges(iacTerraformPlanJson.GetChanges()...)
-	iac.UpdatePlan(obj.PlanId, vo.Succeed) //optimistic change :)
+	iacAggregate.UpdatePlan(obj.PlanId, vo.Succeed) //optimistic change :)
 	if err = handler.unitOfWork.IacPlan.Update(plan, log.WithContext(ctx)); err != nil {
-		iac.UpdatePlan(obj.PlanId, vo.Failed)
+		iacAggregate.UpdatePlan(obj.PlanId, vo.Failed)
 		log.Error().Err(err).Msg("Cannot update plan aggregate into db")
 		return errors.Wrap(err, "Cannot update plan aggregate into db")
 	}
-	if err = handler.unitOfWork.IacRepository.Update(iac, log.WithContext(ctx)); err != nil {
+	if err = handler.unitOfWork.IacRepository.Update(iacAggregate, log.WithContext(ctx)); err != nil {
 		log.Error().Err(err)
 		return errors.Wrap(err, "Cannot update iac aggregate into db")
 	}

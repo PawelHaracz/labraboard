@@ -55,6 +55,7 @@ func main() {
 		repositories.WithIaCRepositoryDbRepository(db),
 		repositories.WithTerraformStateDbRepository(db),
 		repositories.WithIacPlanRepositoryDbRepository(db),
+		repositories.WithIacDeploymentRepositoryDbRepository(db),
 	)
 	if err != nil {
 		log.Panic().Err(err)

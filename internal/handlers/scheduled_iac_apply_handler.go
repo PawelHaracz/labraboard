@@ -81,6 +81,13 @@ func (handler *scheduledIaCApplyHandler) handle(event events.IacApplyScheduled, 
 		return nil
 	}
 
+	deployment, err := handler.unitOfWork.IacDeployment.Get(event.ChangeId, ctx)
+	if err != nil {
+		err := errors.Wrap(err, "deployment doesn't exist")
+		log.Error().Err(err).Msg(err.Error())
+		return err
+	}
+
 	folderPath := fmt.Sprintf("/tmp/%s/apply", output.PlanId)
 	tofuFolderPath := fmt.Sprintf("%s/%s", folderPath, output.RepoPath)
 
@@ -111,12 +118,22 @@ func (handler *scheduledIaCApplyHandler) handle(event events.IacApplyScheduled, 
 
 	tofu, err := iac.NewTofuIacService(tofuFolderPath, log.WithContext(ctx))
 	if err != nil {
-		log.Error().Err(err)
+		log.Error().Err(err).Msg("")
 		return nil
 	}
-	_, err = tofu.Apply(output.PlanId, output.InlineEnvVariable(), ctx) //todo handle output
+	iacOutput, err := tofu.Apply(output.PlanId, output.InlineEnvVariable(), ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Cannot applied changes") //todo think about retries and how to log it
+	} else {
+		deployment.FinishDeployment(iacOutput...)
+		err = handler.unitOfWork.IacDeployment.Update(deployment, ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("")
+			return err
+		}
+	}
 
-	return nil
+	return err
 }
 
 func (handler *scheduledIaCApplyHandler) savePlanAsTfPlan(path string, planRaw []byte) error {

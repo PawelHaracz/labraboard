@@ -5,33 +5,33 @@ import (
 	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/repositories/postgres/models"
-	"labraboard/internal/valueobjects/iacPlans"
+	"labraboard/internal/valueobjects/iac"
 )
 
 type IacPlanMapper[TDao *models.IaCPlanDb, T *aggregates.IacPlan] struct {
 }
 
 func (i IacPlanMapper[TDao, T]) Map(dao *models.IaCPlanDb) (*aggregates.IacPlan, error) {
-	var changes []iacPlans.ChangesIacPlan
+	var changes []iac.ChangesIac
 	if dao.Changes != nil {
 		if err := json.Unmarshal(dao.Changes, &changes); err != nil {
 			return nil, errors.Wrap(err, "can't unmarshal history config")
 		}
 	}
-	var summary *iacPlans.ChangeSummaryIacPlan
+	var summary *iac.ChangeSummaryIac
 	if dao.ChangeSummary != nil {
 		if err := json.Unmarshal(dao.ChangeSummary, &summary); err != nil {
 			return nil, errors.Wrap(err, "can't unmarshal change summary")
 		}
 	}
 
-	var historyConfig *iacPlans.HistoryProjectConfig
+	var historyConfig *iac.HistoryProjectConfig
 	if dao.Config != nil {
 		if err := json.Unmarshal(dao.Config, &historyConfig); err != nil {
 			return nil, errors.Wrap(err, "can't unmarshal history config")
 		}
 	}
-	return aggregates.NewIacPlanExplicit(dao.ID, aggregates.IaCPlanType(dao.PlanType), historyConfig, summary, changes, dao.PlanJson, dao.PlanRaw)
+	return aggregates.NewIacPlanExplicit(dao.ID, aggregates.IaCDeploymentType(dao.PlanType), historyConfig, summary, changes, dao.PlanJson, dao.PlanRaw)
 }
 
 func (i IacPlanMapper[TDao, T]) RevertMap(aggregate *aggregates.IacPlan) (*models.IaCPlanDb, error) {

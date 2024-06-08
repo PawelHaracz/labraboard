@@ -44,7 +44,7 @@ Upps here should be demo video - no worry, I will be soon! - Now check the API o
 - [X] Add and remove  variables
 - [X] Fix handling returning changes from plan
 - [X] Add unit testing of aggregates
-- [ ] ~~Bug fixing e2e testing~~
+- [X] ~~Bug fixing e2e testing~~ (manually)
 - [X] Path for parameters in git folder
 - [X] Create handlers cmd
 - [X] Time Lease for the state
@@ -61,10 +61,12 @@ Upps here should be demo video - no worry, I will be soon! - Now check the API o
 - [ ] Access Token for Backend http
 - [ ] Clean solution to be more DDD
 - [ ] Create Plan changes during run, what was happened during the time
-- [ ] Apply Mechanism to handle the state
+- [X] Apply Mechanism to handle the state
   - [X] Apply based on the Plan
-  - [ ] Save outputs as deployment, handle errors
-  - [ ] Backup before apply using ApplyOptions.Backup
+  - [X] Save outputs as deployment, handle errors
+- [ ] Backup before apply using ApplyOptions.Backup
+- [ ] Implement retries on apply
+- [ ] Correlate Project, Deployment, Plans
 - [ ] Integrate with the Git
 - [ ] Handle other version than version 4.0 of tf 
 - [ ] Handle multiple version of tf and tofu

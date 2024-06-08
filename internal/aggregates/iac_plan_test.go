@@ -34,7 +34,7 @@ func TestIaCPlanAddPlan(t *testing.T) {
 
 func TestIaCPlan_ChangesBasedOnPlan_ValidChangeCount(t *testing.T) {
 	//arrange
-	serializer := helpers.NewSerializer[entities.IacTerraformPlanJson]()
+	serializer := helpers.NewSerializer[entities.IacTerraformOutputJson]()
 	aggregate, _ := NewIacPlan(uuid.New(), Terraform, nil)
 	buf := bytes.NewBuffer(planJson)
 	plan, err := serializer.DeserializeJsonl(buf)
@@ -55,7 +55,7 @@ func TestIaCPlan_ChangesBasedOnPlan_ValidChangeCount(t *testing.T) {
 
 func TestIaCPlan_ChangesBasedOnPlan_ValidResourceChanges(t *testing.T) {
 	//arrange
-	serializer := helpers.NewSerializer[entities.IacTerraformPlanJson]()
+	serializer := helpers.NewSerializer[entities.IacTerraformOutputJson]()
 	aggregate, _ := NewIacPlan(uuid.New(), Terraform, nil)
 	buf := bytes.NewBuffer(planJson)
 	plan, err := serializer.DeserializeJsonl(buf)

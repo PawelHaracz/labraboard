@@ -13,6 +13,7 @@ type UnitOfWork struct {
 	TerraformStateDbRepository Repository[*aggregates.TerraformState]
 	IacRepository              Repository[*aggregates.Iac]
 	IacPlan                    Repository[*aggregates.IacPlan]
+	IacDeployment              Repository[*aggregates.IacDeployment]
 }
 
 func NewUnitOfWork(configs ...UnitOfWorkConfiguration) (*UnitOfWork, error) {
@@ -31,6 +32,9 @@ func NewUnitOfWork(configs ...UnitOfWorkConfiguration) (*UnitOfWork, error) {
 	}
 	if uow.IacPlan == nil {
 		return nil, errors.New("iac plan Repository is not set")
+	}
+	if uow.IacDeployment == nil {
+		return nil, errors.New("iac deployment Repository is not set")
 	}
 	return uow, nil
 }
@@ -72,6 +76,20 @@ func WithIacPlanRepositoryDbRepository(database *db.Database) UnitOfWorkConfigur
 
 	return func(uow *UnitOfWork) error {
 		uow.IacPlan = repository
+		return nil
+	}
+}
+
+func WithIacDeploymentRepositoryDbRepository(database *db.Database) UnitOfWorkConfiguration {
+	repository, err := db.NewIacDeployment(database)
+	if err != nil {
+		return func(uow *UnitOfWork) error {
+			return errors.Wrap(err, "can't create terraform state repository")
+		}
+	}
+
+	return func(uow *UnitOfWork) error {
+		uow.IacDeployment = repository
 		return nil
 	}
 }
