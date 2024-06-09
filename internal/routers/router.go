@@ -15,12 +15,13 @@ import (
 	"labraboard/internal/services"
 )
 
-func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.UnitOfWork, delayTaskManagerPublisher managers.DelayTaskManagerPublisher) *gin.Engine {
+func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.UnitOfWork, delayTaskManagerPublisher managers.DelayTaskManagerPublisher, frontendPath string) *gin.Engine {
 	r := gin.New()
 
 	r.Use(requestid.New(), UseCorrelationId(), GinLogger(), gin.Recovery(), gzip.Gzip(gzip.BestSpeed))
 	r.Use(UnitedSetup(unitOfWork))
-	r.Use(static.Serve("/", static.LocalFile("./client/build", true)))
+
+	r.Use(static.Serve("/", static.LocalFile(frontendPath, true)))
 
 	iac, err := services.NewIacService(
 		services.WithEventBus(publisher),

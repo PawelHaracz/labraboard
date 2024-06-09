@@ -82,7 +82,7 @@ func main() {
 	}
 
 	//go ConfigureWorkers(eventBus, uow, delayTaskManager)
-	routersInit := routers.InitRouter(eventBus, uow, delayTaskManager)
+	routersInit := routers.InitRouter(eventBus, uow, delayTaskManager, cfg.FrontendPath)
 	err = routersInit.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort))
 	if err != nil {
 		log.Panic().Err(err)

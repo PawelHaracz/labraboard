@@ -10,4 +10,5 @@ type Config struct {
 	LogLevel         int8   `yaml:"logLevel" env:"LOG_LEVEL" env-description:"Redis database" env-default:"1" json:"logLevel,omitempty"`
 	UsePrettyLogs    bool   `yaml:"usePrettyLogs" env:"USE_PRETTY_LOGS" env-description:"use pretty logs instead of json. Logs are pushed to stdout" env-default:"false" json:"usePrettyLogs,omitempty"`
 	ServiceDiscovery string `yaml:"serviceDiscovery" env:"SERVICE_DISCOVERY" env-default:"http://localhost" json:"serviceDiscovery,omitempty"`
+	FrontendPath     string `yaml:"frontendPath" env:"FRONTEND_PATH" env-default:"/app/client" json:"frontendPath,omitempty"`
 }

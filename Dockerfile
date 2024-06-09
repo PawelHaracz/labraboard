@@ -40,7 +40,7 @@ COPY entrypoint.sh entrypoint.sh
 #COPY --from=build /app/build/cmd/ ./
 COPY --from=build /app/build/bin/ /app/
 # Copy frontend appliction
-COPY --from=frontend-build /app/client/build/ /app/client/build/
+COPY --from=frontend-build /app/client/build/ /app/client/
 
 # Set the timezone and install CA certificates
 RUN apk --no-cache add ca-certificates tzdata
