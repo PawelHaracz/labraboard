@@ -3,6 +3,7 @@ package routers
 import (
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/requestid"
+	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -14,11 +15,13 @@ import (
 	"labraboard/internal/services"
 )
 
-func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.UnitOfWork, delayTaskManagerPublisher managers.DelayTaskManagerPublisher) *gin.Engine {
+func InitRouter(publisher eventbus.EventPublisher, unitOfWork *repositories.UnitOfWork, delayTaskManagerPublisher managers.DelayTaskManagerPublisher, frontendPath string) *gin.Engine {
 	r := gin.New()
 
 	r.Use(requestid.New(), UseCorrelationId(), GinLogger(), gin.Recovery(), gzip.Gzip(gzip.BestSpeed))
 	r.Use(UnitedSetup(unitOfWork))
+
+	r.Use(static.Serve("/", static.LocalFile(frontendPath, true)))
 
 	iac, err := services.NewIacService(
 		services.WithEventBus(publisher),
