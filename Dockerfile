@@ -18,6 +18,20 @@ RUN for file in $(find /app/build/cmd -name main.go); do \
         go build -o /app/build/bin/$(dirname $file | xargs basename) $file; \
     done
 
+FROM node:22.2.0-alpine3.19 as frontend-build
+
+WORKDIR /app/client
+
+# Copy frontend source code
+COPY ./client/package.json ./client/yarn.lock ./
+RUN yarn install
+
+COPY ./client .
+
+# Build the frontend application
+RUN yarn build
+
+
 FROM alpine:edge
 WORKDIR /app
 
@@ -25,6 +39,8 @@ COPY entrypoint.sh entrypoint.sh
 
 #COPY --from=build /app/build/cmd/ ./
 COPY --from=build /app/build/bin/ /app/
+# Copy frontend appliction
+COPY --from=frontend-build /app/client/build/ /app/client/build/
 
 # Set the timezone and install CA certificates
 RUN apk --no-cache add ca-certificates tzdata
