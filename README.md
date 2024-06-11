@@ -21,9 +21,9 @@ Terraform is a powerful tool for managing infrastructure, but handling governanc
 Labraboard - inspired by the intelligence and versatility of a Labrador, is here to be your guide in the world of infrastructure management.
 
 ## Demo
-![Spped up demo](.img/demo-labraboard-speedup.mp4)
+![Spped up demo](https://github.com/PawelHaracz/labraboard/assets/14162492/c2f6f8ab-9c3e-4419-8ccf-45582b602639)
 
-if it is too fast there is a slower bit version: [link]()
+if it is too fast there is a slower bit version: [link](https://github.com/PawelHaracz/labraboard/assets/14162492/74c482b9-05fd-4e53-9cd8-da1b46207836)
 
 ### .HTTP files
 
