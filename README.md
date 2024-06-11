@@ -1,17 +1,24 @@
-# labraboard
+# Labraboard: The Intelligent IaC Management Platform
 
 ![Labraboard](.img/logo.png)
 ## About Labraboard
 
-Labraboard is a state-aware Infrastructure as Code (IaC) platform that focuses on managing Terraform. It is designed to streamline the process of running plans and applying infrastructure changes. 
+Labraboard is a state-aware Infrastructure as Code (IaC) platform specifically designed to manage Terraform configurations with ease and efficiency. Inspired by the Labrador, a versatile and intelligent working dog known for its roles as a guide, rescuer, and retriever, Labraboard embodies these qualities by becoming an indispensable tool in your infrastructure management toolkit.
 
-The platform provides a robust set of features including InMemory storage, HTTP backend, PostgreSQL backend, Redis queue, and more. It also supports handling locks on the state, destroying, and overriding the backend.
+## Key Features
 
-Labraboard is equipped with a custom environment and variables for Terraform, OpenTofu, making it a versatile tool for managing and deploying infrastructure. It also offers an HTTP backend where the state is kept, and during the running plan or apply, the backend configuration is added automatically by overriding the backend.
+* State Management: Efficiently handle Terraform states with support for InMemory storage, HTTP backend, PostgreSQL backend, and Redis queue.
+* Lock Handling: Robust mechanisms to handle state locks, ensuring smooth and safe infrastructure updates.
+* Custom Environment and Variables: Tailor your Terraform and OpenTofu environments with custom configurations for seamless deployments.
+* Dynamic Backend Configuration: Automatically override backend configurations during plan or apply operations, simplifying the setup process.
+* Project Operations: Manage projects with create, read, update, and delete functionalities, including the ability to specify Git references, set default values, and configure other essential parameters.
+* Time Lease for State: Implement time-based leases to manage state longevity.
+* User Configuration: Customize user settings and preferences.
 
-Future enhancements include project CRUD, time lease for the state, integration with Git, user configuration, web interface, and more.
+## Why Labraboard?
+Terraform is a powerful tool for managing infrastructure, but handling governance and surrounding processes can be challenging. Labraboard addresses these challenges, making it easier to run plans and apply infrastructure changes efficiently. With Labraboard, you can focus on building and deploying your infrastructure without worrying about the complexities of governance.
 
-With Labraboard, you can efficiently manage your infrastructure and streamline your IaC processes. 
+Labraboard - inspired by the intelligence and versatility of a Labrador, is here to be your guide in the world of infrastructure management.
 
 ## Starting point
 
