@@ -1,0 +1,99 @@
+@suffix=api/v1
+
+#Create Project
+POST http://{{hostname}}:{{port}}/{{suffix}}/project
+Content-Type: application/json
+
+{
+  "repositoryBranch:": "master",
+  "repositoryTerraformPath": "101-terraform-job/terraform",
+  "repositoryUrl": "https://github.com/microsoft/terraform-azure-devops-starter.git",
+  "type": 0
+}
+
+> {%
+    client.global.set("projectId", response.body);
+%}
+
+###
+#Set ENVS
+PUT http://{{hostname}}:{{port}}/{{suffix}}/project/{{projectId}}/env
+Content-Type: application/json
+
+{
+  "isSecret": false,
+  "name": "ARM_TENANT_ID",
+  "value": "{{ARM_TENANT_ID}}"
+}
+
+###
+PUT http://{{hostname}}:{{port}}/{{suffix}}/project/{{projectId}}/env
+Content-Type: application/json
+
+{
+  "isSecret": false,
+  "name": "ARM_CLIENT_ID",
+  "value": "{{ARM_CLIENT_ID}}"
+}
+
+###
+PUT http://{{hostname}}:{{port}}/{{suffix}}/project/{{projectId}}/env
+Content-Type: application/json
+
+{
+  "isSecret": false,
+  "name": "ARM_SUBSCRIPTION_ID",
+  "value": "{{ARM_SUBSCRIPTION_ID}}"
+}
+
+###
+PUT http://{{hostname}}:{{port}}/{{suffix}}/project/{{projectId}}/env
+Content-Type: application/json
+
+{
+  "isSecret": true,
+  "name": "ARM_CLIENT_SECRET",
+  "value": "{{ARM_CLIENT_SECRET}}"
+}
+
+###
+#SET VARIABLES
+PUT http://{{hostname}}:{{port}}/{{suffix}}/project/{{projectId}}/variable
+Content-Type: application/json
+
+{
+  "name": "environment",
+  "value": "{{environment}}"
+}
+
+###
+
+PUT http://{{hostname}}:{{port}}/{{suffix}}/project/{{projectId}}/variable
+Content-Type: application/json
+
+{
+  "name": "location",
+  "value": "{{location}}"
+}
+
+###
+
+#RUN PLAN
+POST http://{{hostname}}:{{port}}/{{suffix}}/terraform/{{projectId}}/plan
+Content-Type: application/json
+
+{
+}
+
+> {%
+    client.global.set("planId", response.body);
+%}
+
+
+###
+#GET PLAN CHANGES
+GET http://{{hostname}}:{{port}}/{{suffix}}/terraform/{{projectId}}/plan/{{planId}}
+
+###
+#Apply Plan
+POST http://{{hostname}}:{{port}}/{{suffix}}/terraform/{{projectId}}/plan/{{planId}}/apply

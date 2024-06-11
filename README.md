@@ -20,6 +20,16 @@ Terraform is a powerful tool for managing infrastructure, but handling governanc
 
 Labraboard - inspired by the intelligence and versatility of a Labrador, is here to be your guide in the world of infrastructure management.
 
+## Demo
+![Spped up demo](.img/demo-labraboard-speedup.mp4)
+
+if it is too fast there is a slower bit version: [link]()
+
+### .HTTP files
+
+You can try by own this tool using [app.rest file](api.rest) please bear aware that you have to change values in file `http-client.env.json` and add a private value `ARM_CLIENT_SECRET` for azure. 
+I enhance you to test in your terraform and your env variables :)
+
 ## Starting point
 
 Swagger docs has to be updated to reflect the new endpoints. 
