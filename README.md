@@ -20,6 +20,16 @@ Terraform is a powerful tool for managing infrastructure, but handling governanc
 
 Labraboard - inspired by the intelligence and versatility of a Labrador, is here to be your guide in the world of infrastructure management.
 
+## Demo
+![Spped up demo](https://github.com/PawelHaracz/labraboard/assets/14162492/c2f6f8ab-9c3e-4419-8ccf-45582b602639)
+
+if it is too fast there is a slower bit version: [link](https://github.com/PawelHaracz/labraboard/assets/14162492/74c482b9-05fd-4e53-9cd8-da1b46207836)
+
+### .HTTP files
+
+You can try by own this tool using [app.rest file](api.rest) please bear aware that you have to change values in file `http-client.env.json` and add a private value `ARM_CLIENT_SECRET` for azure. 
+I enhance you to test in your terraform and your env variables :)
+
 ## Starting point
 
 Swagger docs has to be updated to reflect the new endpoints. 
@@ -83,11 +93,14 @@ Upps here should be demo video - no worry, I will be soon! - Now check the API o
 - [ ] Add a web interface
 - [ ] Encryption at rest
 
-### Architecture 
-#### Event Storming 
-[Labraboard Event storming](https://miro.com/app/board/uXjVKHzpuQ4=/?share_link_id=741994614357)
+[//]: # (### Architecture )
 
-![big-picture-1.png](.img/big-picture-1.png)
+[//]: # (#### Event Storming )
+
+[//]: # ([Labraboard Event storming]&#40;https://miro.com/app/board/uXjVKHzpuQ4=/?share_link_id=741994614357&#41;)
+
+[//]: # ()
+[//]: # (![big-picture-1.png]&#40;.img/big-picture-1.png&#41;)
 
 ### Http Backend
 Solution uses own delivered http backend where state is kept. During running plan or apply the backend configuration is 
@@ -104,17 +117,6 @@ terraform {
   }
 }
 ```
-
-## Links
-
-1. https://www.squash.io/optimizing-gin-in-golang-project-structuring-error-handling-and-testing/
-2. https://github.com/swaggo/gin-swagger
-3. https://github.com/eddycjy/go-gin-example
-4. https://github.com/derekahn/ultimate-go/blob/master/language/interfaces/main.go
-5. https://github.com/percybolmer/ddd-go
-6. https://velocity.tech/blog/build-a-microservice-based-application-in-golang-with-gin-redis-and-mongodb-and-deploy-it-in-k8s
-7. https://www.ompluscator.com/article/golang/practical-ddd-domain-repository/?source=post_page-----d308c9d79ba7--------------------------------
-
 ## Disclaimer
 
 Please note that this project is currently under active development and is not considered production-ready. We are continuously working to improve and stabilize its features, but it does not yet meet all the requirements for production use.

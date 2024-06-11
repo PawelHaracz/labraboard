@@ -49,6 +49,7 @@ func (db *Database) Migrate() {
 	err := db.GormDB.AutoMigrate(
 		&models.TerraformStateDb{},
 		&models.IaCDb{},
+		&models.IaCDeploymentDb{},
 		&models.IaCPlanDb{})
 	if err != nil {
 		panic(errors.Wrap(err, "failed to migrate"))
