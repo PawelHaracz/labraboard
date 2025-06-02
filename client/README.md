@@ -20,3 +20,14 @@ npm install \
  @nivo/bar \
  @nivo/geo
 ```
+
+## Technology stack
+
+- JavaScript
+- NodeJS
+- React
+- FullCalendar
+- Nivo
+- MUI
+- Formik
+- yup

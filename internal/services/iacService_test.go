@@ -1,8 +1,6 @@
 package services
 
 import (
-	"github.com/google/uuid"
-	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	m "labraboard/internal/eventbus/memory"
 	"labraboard/internal/logger"
@@ -12,6 +10,9 @@ import (
 	"labraboard/internal/repositories/memory"
 	"labraboard/internal/valueobjects"
 	"testing"
+
+	"github.com/google/uuid"
+	"golang.org/x/net/context"
 )
 
 func TestNewIacService(t *testing.T) {
@@ -19,7 +20,8 @@ func TestNewIacService(t *testing.T) {
 	uow, err := repositories.NewUnitOfWork(
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.Iac]()),
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.IacPlan]()),
-		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.TerraformState]()))
+		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.TerraformState]()),
+		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.IacDeployment]()))
 
 	if err != nil {
 		t.Errorf("error: %v", err)
@@ -60,7 +62,8 @@ func TestIacService_RunTerraformPlan(t *testing.T) {
 	uow, err := repositories.NewUnitOfWork(
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.Iac]()),
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.IacPlan]()),
-		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.TerraformState]()))
+		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.TerraformState]()),
+		repositories.WithIacPlanRepositoryDbRepositoryMemory(memory.NewGenericRepository[*aggregates.IacDeployment]()))
 
 	if err != nil {
 		t.Errorf("error: %v", err)

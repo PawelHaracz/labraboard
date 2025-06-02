@@ -3,12 +3,13 @@ package e2e
 import (
 	json2 "encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	tc "github.com/testcontainers/testcontainers-go/modules/compose"
 	"io"
 	"labraboard/internal/routers/api/dtos"
 	"net/http"
 	"testing"
+
+	"github.com/google/uuid"
+	tc "github.com/testcontainers/testcontainers-go/modules/compose"
 )
 
 // use this deprecated method becasue there is a bug with opentelemetry schema version between docker desktop and test containers
@@ -23,19 +24,19 @@ func TestTerraformProjectPlan(t *testing.T) {
 	//err = compose.Up(ctx)
 
 	if execError.Error != nil {
-		t.Errorf(execError.Error.Error())
+		t.Errorf("compose up failed: %v", execError.Error)
 	}
 	defer func() {
 		execError := compose.Down()
 		if execError.Error != nil {
-			t.Errorf(execError.Error.Error())
+			t.Errorf("compose down failed: %v", execError.Error)
 		}
 	}()
 
 	var baseUrl = "http://localhost:8080/api/v1"
 	resp, err := http.Get(fmt.Sprintf("%s/project", baseUrl))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("http request failed: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -43,7 +44,7 @@ func TestTerraformProjectPlan(t *testing.T) {
 	var listProjects []*dtos.GetProjectBaseDto
 	err = json2.Unmarshal(body, &listProjects)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("unmarshal failed: %v", err)
 	}
 
 	if len(listProjects) != 0 {

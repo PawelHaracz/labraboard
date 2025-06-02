@@ -1,9 +1,6 @@
 package iac
 
 import (
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/logger"
 	"labraboard/internal/models"
@@ -13,21 +10,31 @@ import (
 	"labraboard/internal/valueobjects/iac"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 )
 
 func TestAssembler_Assemble(t *testing.T) {
 	logger.Init(7, false) //disabled
-	uow, _ := repositories.NewUnitOfWork(
-		repositories.WithIacPlanRepositoryDbRepositoryMemory(
-			dbmemory.NewGenericRepository[*aggregates.IacPlan](),
-		),
+	uow, err := repositories.NewUnitOfWork(
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(
 			dbmemory.NewGenericRepository[*aggregates.Iac](),
 		),
 		repositories.WithIacPlanRepositoryDbRepositoryMemory(
+			dbmemory.NewGenericRepository[*aggregates.IacPlan](),
+		),
+		repositories.WithIacPlanRepositoryDbRepositoryMemory(
 			dbmemory.NewGenericRepository[*aggregates.TerraformState](),
 		),
+		repositories.WithIacPlanRepositoryDbRepositoryMemory(
+			dbmemory.NewGenericRepository[*aggregates.IacDeployment](),
+		),
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 	projectId, planIds := Arrange(uow)
 	var assembler = NewAssembler(uow)
 	var ctx = context.TODO()

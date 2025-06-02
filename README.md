@@ -92,6 +92,7 @@ Upps here should be demo video - no worry, I will be soon! - Now check the API o
 - [ ] User configuration
 - [ ] Add a web interface
 - [ ] Encryption at rest
+- [ ] fix end2end tests - `terraform_project_plan_test`
 
 [//]: # (### Architecture )
 
