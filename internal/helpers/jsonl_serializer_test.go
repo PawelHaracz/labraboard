@@ -7,9 +7,9 @@ import (
 )
 
 func TestIacTerraformPlanJsons(t *testing.T) {
-	f, err := os.Open("/Users/pawelharacz/src/labraboard/testingArtifacts/terraform_plan.json")
+	f, err := os.Open("../../testingArtifacts/terraform_plan.json")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("failed to open file: %v", err)
 		t.Fail()
 	}
 	defer f.Close()
@@ -17,7 +17,7 @@ func TestIacTerraformPlanJsons(t *testing.T) {
 	serializer := NewSerializer[entities.IacTerraformOutputJson]()
 	iacTerraformPlanJsons, err := serializer.DeserializeJsonl(f)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("failed to deserialize: %v", err)
 	}
 
 	if len(iacTerraformPlanJsons) != 7 {
@@ -26,9 +26,9 @@ func TestIacTerraformPlanJsons(t *testing.T) {
 }
 
 func TestIacTerraformApplyErrorJsons(t *testing.T) {
-	f, err := os.Open("/Users/pawelharacz/src/labraboard/testingArtifacts/terraform_apply_error.json")
+	f, err := os.Open("../../testingArtifacts/terraform_apply_error.json")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("failed to open file: %v", err)
 		t.Fail()
 	}
 	defer f.Close()
@@ -36,7 +36,7 @@ func TestIacTerraformApplyErrorJsons(t *testing.T) {
 	serializer := NewSerializer[entities.IacTerraformDiagnosticJson]()
 	iacTerraformPlanJsons, err := serializer.DeserializeJsonl(f)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("failed to deserialize: %v", err)
 	}
 
 	if len(iacTerraformPlanJsons) != 1 {

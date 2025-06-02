@@ -1,10 +1,11 @@
 package repositories
 
 import (
-	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/repositories/memory"
 	db "labraboard/internal/repositories/postgres"
+
+	"github.com/pkg/errors"
 )
 
 type UnitOfWorkConfiguration func(os *UnitOfWork) error
@@ -109,6 +110,11 @@ func WithIacPlanRepositoryDbRepositoryMemory(repository interface{}) UnitOfWorkC
 	case *memory.GenericRepository[*aggregates.TerraformState]:
 		return func(uow *UnitOfWork) error {
 			uow.TerraformStateDbRepository = repo
+			return nil
+		}
+	case *memory.GenericRepository[*aggregates.IacDeployment]:
+		return func(uow *UnitOfWork) error {
+			uow.IacDeployment = repo
 			return nil
 		}
 	default:

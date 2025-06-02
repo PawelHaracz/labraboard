@@ -3,12 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/pkg/errors"
-	"github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog"
-	"golang.org/x/net/context"
 	"labraboard"
 	"labraboard/internal/eventbus/redisEventBus"
 	"labraboard/internal/handlers"
@@ -21,6 +15,13 @@ import (
 	"os/signal"
 	"runtime"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog"
+	"golang.org/x/net/context"
 )
 
 var cfg labraboard.Config
@@ -102,7 +103,7 @@ func main() {
 	if err != nil {
 		log.Panic().Err(err)
 	}
-	for _, handler := range append(allHandlers) {
+	for _, handler := range allHandlers {
 		go handler.Handle(ctx)
 	}
 

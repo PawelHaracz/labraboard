@@ -4,10 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/pkg/errors"
-	"github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog"
 	"labraboard"
 	"labraboard/internal/eventbus/redisEventBus"
 	"labraboard/internal/handlers"
@@ -18,6 +14,11 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog"
 )
 
 var cfg labraboard.Config
@@ -88,7 +89,7 @@ func main() {
 		cancel()
 		log.Panic().Err(err)
 	}
-	for _, handler := range append(allHandlers) {
+	for _, handler := range allHandlers {
 		go handler.Handle(ctx)
 	}
 

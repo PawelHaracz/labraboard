@@ -1,4 +1,4 @@
-FROM golang:1.22.0-alpine3.19 as build
+FROM golang:1.24.3-alpine3.20 as build
 
 ENV GO111MODULE=on
 
@@ -18,7 +18,7 @@ RUN for file in $(find /app/build/cmd -name main.go); do \
         go build -o /app/build/bin/$(dirname $file | xargs basename) $file; \
     done
 
-FROM node:22.2.0-alpine3.19 as frontend-build
+FROM node:22.2.0-alpine3.20 as frontend-build
 
 WORKDIR /app/client
 
