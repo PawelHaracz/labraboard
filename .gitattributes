@@ -1,0 +1,9 @@
+*.js linguist-detectable=false
+*.css linguist-detectable=false
+*.html linguist-detectable=false
+*.sh eol=lf
+*.bat eol=crlf
+*.md text eol=crlf
+*.md merge=union
+*.json diff=json
+*.mp4 filter=lfs diff=lfs merge=lfs -text
