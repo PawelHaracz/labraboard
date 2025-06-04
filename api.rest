@@ -1,5 +1,10 @@
 @suffix=api/v1
+@hostname=localhost
+@port=8080
+#Get Projects
+GET http://{{hostname}}:{{port}}/{{suffix}}/project
 
+###
 #Create Project
 POST http://{{hostname}}:{{port}}/{{suffix}}/project
 Content-Type: application/json

@@ -1,11 +1,12 @@
 package postgres
 
 import (
+	"labraboard/internal/repositories/postgres/models"
+
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"labraboard/internal/repositories/postgres/models"
 )
 
 type Database struct {

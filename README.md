@@ -93,6 +93,7 @@ Upps here should be demo video - no worry, I will be soon! - Now check the API o
 - [ ] Add a web interface
 - [ ] Encryption at rest
 - [ ] fix end2end tests - `terraform_project_plan_test`
+- [ ] fix bugs related passing refs instead of valu objects in array and fix mapping data from dao into aggregate
 
 [//]: # (### Architecture )
 
@@ -118,6 +119,153 @@ terraform {
   }
 }
 ```
+## Build
+### Prerequisites
+- Go 1.x
+- Node.js and Yarn
+- Docker and Docker Compose (optional)
+- PostgreSQL
+- Redis
+
+### Required Development Tools
+The following tools will be automatically installed during development setup:
+- `swag` - Swagger documentation generator
+- `gosec` - Security scanner
+- `trivy` - Container security scanner
+
+### Environment Variables
+The application can be configured using the following environment variables:
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| CONNECTION_STRING | PostgreSQL connection string | - | Yes |
+| HTTP_PORT | HTTP port to serve the application | 8080 | No |
+| REDIS_HOST | Redis host | localhost | No |
+| REDIS_PORT | Redis port | 6379 | No |
+| REDIS_PASSWORD | Redis password | eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81 | No |
+| REDIS_DB | Redis database number | 0 | No |
+| LOG_LEVEL | Logging level | 1 | No |
+| USE_PRETTY_LOGS | Use pretty logs instead of JSON | false | No |
+| SERVICE_DISCOVERY | Service discovery URL | http://localhost | No |
+| FRONTEND_PATH | Path to frontend files | /app/client | No |
+
+### Building from Source
+
+1. Clone the repository:
+```bash
+git clone https://github.com/PawelHaracz/labraboard.git
+cd labraboard
+```
+
+2. Update Go modules:
+```bash
+make mod
+```
+
+3. Build the application:
+```bash
+make build
+```
+
+4. Run tests:
+```bash
+make test
+```
+
+5. Generate documentation:
+```bash
+make build-swagger
+```
+
+### Troubleshooting
+
+If you encounter dependency issues:
+
+1. Clean the Go module cache:
+```bash
+go clean -modcache
+```
+
+2. Update dependencies:
+```bash
+make update-dependencies
+```
+
+### Development Workflow
+
+The project uses Make targets to streamline the development process. Here are the main commands:
+
+#### Development
+- `make dev-setup` - Setup development environment
+- `make install` - Install application and dependencies
+- `make fmt` - Format code
+- `make lint` - Run linter
+- `make vet` - Run go vet
+- `make dependency-check` - Check for outdated dependencies
+- `make update-dependencies` - Update dependencies
+
+#### Testing
+- `make test` - Run all tests
+- `make test-unit` - Run unit tests
+- `make test-cover` - Generate test coverage report
+
+#### Building
+- `make build` - Build all components
+- `make build-api` - Build API server
+- `make build-handlers` - Build handlers
+- `make build-frontend` - Build frontend application
+
+#### Docker Operations
+- `make docker-build` - Build Docker image
+- `make docker-push` - Push Docker image
+- `make docker-compose-up` - Start services
+- `make docker-compose-stop` - Stop services
+
+#### Security
+- `make security-scan` - Run security scans
+
+#### Release Management
+- `make release-prepare` - Prepare release artifacts
+- `make release-publish` - Publish release
+
+#### Maintenance
+- `make clean` - Clean build artifacts
+- `make clean-all` - Remove all generated artifacts
+
+For a complete list of available commands, run:
+```bash
+make help
+```
+
+### Development Guidelines
+
+1. **Code Style**
+   - Follow Go standard formatting
+   - Run `make fmt` before committing
+   - Ensure code passes `make lint` and `make vet`
+
+2. **Testing**
+   - Write unit tests for new features
+   - Maintain test coverage above 80%
+   - Run `make test` before committing
+
+3. **Documentation**
+   - Update Swagger documentation for API changes
+   - Keep README.md up to date
+   - Document new features and changes
+
+4. **Security**
+   - Run security scans regularly
+   - Keep dependencies updated
+   - Follow security best practices
+
+5. **Release Process**
+   - Update version in Makefile
+   - Create release notes
+   - Run full test suite
+   - Build and test Docker image
+   - Publish release
+
 ## Disclaimer
 
 Please note that this project is currently under active development and is not considered production-ready. We are continuously working to improve and stabilize its features, but it does not yet meet all the requirements for production use.

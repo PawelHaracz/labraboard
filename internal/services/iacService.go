@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/eventbus"
 	"labraboard/internal/eventbus/events"
@@ -15,6 +13,9 @@ import (
 	"labraboard/internal/routers/api/dtos"
 	vo "labraboard/internal/valueobjects"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 )
 
 type TerraformPlanRunner struct {

@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"context"
 	json2 "encoding/json"
 	"fmt"
 	"io"
@@ -8,28 +9,27 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/google/uuid"
 	tc "github.com/testcontainers/testcontainers-go/modules/compose"
 )
 
 // use this deprecated method becasue there is a bug with opentelemetry schema version between docker desktop and test containers
 // conflicting Schema URL: https://opentelemetry.io/schemas/1.24.0 and https://opentelemetry.io/schemas/1.21.0
 func TestTerraformProjectPlan(t *testing.T) {
-	t.SkipNow()
 	composeFilePaths := []string{"../../docker-compose.yaml"}
-	compose := tc.NewLocalDockerCompose(composeFilePaths, uuid.New().String())
-	compose.Cmd = []string{"up", "-d"}
+	compose, err := tc.NewDockerCompose(composeFilePaths...)
+	if err != nil {
+		t.Errorf("failed to create compose: %v", err)
+		return
+	}
 
-	execError := compose.Invoke()
-	//err = compose.Up(ctx)
-
-	if execError.Error != nil {
-		t.Errorf("compose up failed: %v", execError.Error)
+	err = compose.Up(context.Background(), tc.Wait(true))
+	if err != nil {
+		t.Errorf("compose up failed: %v", err)
 	}
 	defer func() {
-		execError := compose.Down()
-		if execError.Error != nil {
-			t.Errorf("compose down failed: %v", execError.Error)
+		err := compose.Down(context.Background())
+		if err != nil {
+			t.Errorf("compose down failed: %v", err)
 		}
 	}()
 

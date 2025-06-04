@@ -2,13 +2,14 @@ package postgres
 
 import (
 	_ "encoding/json"
-	"github.com/google/uuid"
-	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 	"labraboard/internal/aggregates"
 	"labraboard/internal/mappers"
 	"labraboard/internal/repositories/postgres/models"
 	_ "labraboard/internal/valueobjects"
+
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 )
 
 type IaCRepository struct {
